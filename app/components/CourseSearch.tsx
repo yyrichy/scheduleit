@@ -5,6 +5,7 @@ import { useState } from "react";
 import RequirementsSelector from "./RequirementsSelector";
 import { GenEdRequirements } from "../types/schedule";
 import { SearchResult } from "../utils/courseQuery";
+import { CourseTagsInput } from "./CourseTagsInput";
 
 interface SearchResults {
   csCourses: SearchResult[];
@@ -17,6 +18,7 @@ interface SearchResults {
 
 export default function CourseSearch() {
   const [query, setQuery] = useState("");
+  const [completedCourses, setCompletedCourses] = useState<string[]>([]);
   const [results, setResults] = useState<SearchResults>({
     csCourses: [],
     genEdCourses: {},
@@ -67,12 +69,12 @@ export default function CourseSearch() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ category, query }),
           });
-          
+
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || "Gen Ed search failed");
           }
-          
+
           const data = await response.json();
           genEdResults[category] = data;
         } catch (err) {
@@ -80,7 +82,7 @@ export default function CourseSearch() {
         }
       }
     }
-  
+
     setResults((prevResults) => ({
       ...prevResults,
       genEdCourses: genEdResults,
@@ -97,7 +99,7 @@ export default function CourseSearch() {
       const response = await fetch("/api/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, completedCourses }),
       });
 
       if (!response.ok) {
@@ -129,6 +131,7 @@ export default function CourseSearch() {
 
       <div className="mb-8">
         <div className="flex flex-col gap-4">
+          <CourseTagsInput value={completedCourses} onChange={setCompletedCourses} />
           <input
             type="text"
             value={query}
@@ -222,7 +225,7 @@ function CourseCard({ result }: { result: SearchResult }) {
       </div>
       <div className="mt-4 pt-4 border-t">
         <h4 className="font-semibold text-gray-700">Prerequisites:</h4>
-        <p className="text-gray-600">{result.prerequisites?.length > 0 ? result.prerequisites.join(", ") : "None"}</p>
+        <p className="text-gray-600">{result.prerequisites?.length > 0 ? result.prerequisites : "None"}</p>
       </div>
       <div className="mt-4 pt-4 border-t">
         <h4 className="font-semibold text-gray-700">Gen Ed:</h4>
