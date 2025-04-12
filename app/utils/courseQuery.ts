@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { loadVectorStores } from "./modelTrainer";
+import { prerequisiteMap } from "./prerequisiteMap";
 
 interface PreferenceAnalysis {
   difficultyScore: number;
@@ -66,10 +67,11 @@ export interface SearchResult {
   course_id: string;
   content: string;
   credits: number;
-  prerequisites: string[];
+  prerequisites: string;
   gpa: number;
   gen_ed?: string[];
-  ranking: number; // Add ranking property
+  ranking: number;
+  prerequisites_met: boolean;
 }
 
 export function transformDoc(doc: any, index: number): SearchResult {
@@ -78,43 +80,33 @@ export function transformDoc(doc: any, index: number): SearchResult {
     course_id: doc.metadata.course_id,
     content: doc.pageContent,
     credits: doc.metadata.credits,
-    prerequisites: doc.metadata.prerequisites,
+    prerequisites: doc.metadata.prerequisites || "", // Ensure string
     gpa: gpaMatch ? parseFloat(gpaMatch[1]) : NaN,
     gen_ed: doc.metadata.gen_ed,
-    ranking: index + 1, // Add ranking based on position
+    ranking: index + 1,
+    prerequisites_met: true // Default to true
   };
 }
 
 export async function queryCourses(
   query: string,
+  completedCourses: string[],
   csLimit: number = 5,
   genEdLimit: number = 5,
   genEdRequirements?: Record<string, number>
 ): Promise<{ csCourses: SearchResult[]; genEdCourses: Record<string, SearchResult[]> }> {
   const { csStore, genEdStore } = await loadVectorStores();
-  const analysis = await analyzeQuery(query);
 
-  // Search CS courses with analysis
-  const csResults = await csStore.similaritySearch(query, csLimit * 2);
-  const filteredCSResults = csResults
-    .map((result, index) => transformDoc(result, index))
-    .filter((course) => {
-      // Filter by level if specified
-      if (analysis.levelPreference) {
-        const courseLevel = course.course_id.match(/\d{1}/)?.[0] + "xx";
-        if (courseLevel !== analysis.levelPreference) return false;
-      }
-
-      // Filter by difficulty if specified
-      if (analysis.difficultyScore !== undefined) {
-        const courseDifficulty = course.gpa ? 1 - course.gpa / 4.0 : 0.5;
-        const difficultyThreshold = 0.2;
-        return Math.abs(courseDifficulty - analysis.difficultyScore) <= difficultyThreshold;
-      }
-
-      return true;
-    })
-    .slice(0, csLimit);
+  // Search CS courses
+  const csResults = await csStore.similaritySearch(query, csLimit);
+  const csCourses = csResults.map((result, index) => {
+    const searchResult = transformDoc(result, index);
+    // Only set prerequisites_met for CS courses
+    if (prerequisiteMap[searchResult.course_id]) {
+      searchResult.prerequisites_met = prerequisiteMap[searchResult.course_id](completedCourses);
+    }
+    return searchResult;
+  });
 
   // Initialize an object to hold Gen Ed results by category
   const genEdCourses: Record<string, SearchResult[]> = {};
@@ -124,26 +116,15 @@ export async function queryCourses(
     for (const [category, count] of Object.entries(genEdRequirements)) {
       if (count > 0) {
         const categoryResults = await genEdStore.similaritySearch(`${query} ${category}`, genEdLimit);
-        const filteredGenEdResults = categoryResults
-          .map((result, index) => transformDoc(result, index))
-          .filter((course) => {
-            // Filter by difficulty only for Gen-Ed
-            if (analysis.difficultyScore !== undefined) {
-              const courseDifficulty = course.gpa ? 1 - course.gpa / 4.0 : 0.5;
-              const difficultyThreshold = 0.2;
-              return Math.abs(courseDifficulty - analysis.difficultyScore) <= difficultyThreshold;
-            }
-            return true;
-          })
-          .slice(0, genEdLimit);
-
-        genEdCourses[category] = filteredGenEdResults;
+        genEdCourses[category] = categoryResults.map((result, index) => 
+          transformDoc(result, index)
+        );
       }
     }
   }
 
   return {
-    csCourses: filteredCSResults,
+    csCourses,
     genEdCourses,
   };
 }

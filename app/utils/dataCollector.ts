@@ -1,3 +1,10 @@
+/* 
+OUTDATED
+OUTDATED
+OUTDATED
+OUTDATED
+*/
+
 import axios from "axios";
 import { prerequisiteMap } from "./prerequisiteMap";
 

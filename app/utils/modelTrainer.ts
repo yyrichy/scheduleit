@@ -41,7 +41,7 @@ async function fetchCSCourses(): Promise<Document[]> {
           metadata: {
             course_id: course.course_id,
             credits: course.credits,
-            prerequisites: course.prerequisites || [],
+            prerequisites: course.prerequisites || "",
             type: "cs",
             name: course.name,
           },
@@ -103,6 +103,10 @@ async function fetchAndProcessGenEdCourses(category: string) {
       const planetTerpData = await fetchPlanetTerpData(course.course_id);
 
       const content = `${course.name}\n${course.description}\nAverage GPA: ${planetTerpData?.average_gpa || "N/A"}`;
+      let prerequisites = course.relationships.preqs || "";
+      if (course.relationships.preqs) {
+        prerequisites += `\n ${course.relationships.additional_info}`;
+      }
 
       documents.push(
         new Document({
@@ -110,7 +114,7 @@ async function fetchAndProcessGenEdCourses(category: string) {
           metadata: {
             course_id: course.course_id,
             credits: course.credits,
-            prerequisites: course.prerequisites || [],
+            prerequisites: prerequisites,
             gen_ed: course.gen_ed,
             name: course.name,
             type: "gen_ed",
