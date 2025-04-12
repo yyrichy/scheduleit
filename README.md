@@ -1,63 +1,117 @@
 # UMD Course Scheduler
 
-# Notes for team
+### Plan smarter. Schedule faster.
 
-## Done/Mostly Working
+## Table of Contents
+- [Inspiration](#inspiration)
+- [What It Does](#what-it-does)
+- [How It Works](#how-it-works)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Current Progress](#current-progress)
+- [Challenges](#challenges)
+- [What's Next](#whats-next)
+- [Run Locally](#run-locally)
+
+---
+
+## Inspiration
+
+As students at UMD, we were frustrated with how difficult it was to plan future semesters, especially with the advisor-to-student ratio. Whether it was finding courses that align with our interests, avoiding time conflicts, or syncing with friends, existing tools just didn’t cut it. So we built one.
+
+---
+
+## What It Does
+
+UMD Course Scheduler helps students:
+- Find relevant courses using natural language queries (e.g., "programming courses with data structures")
+- Visualize time conflicts
+- Track planned and taken classes
+- Compare with friends' schedules *(coming soon!)*
+
+---
+
+## How It Works
+
+### 🧠 Vector-Based Search
+
+1. **Data Collection**
+   - Course data from **UMD.io**
+   - Grade distributions and reviews from **PlanetTerp**
+
+2. **Embedding Generation**
+   - HuggingFace’s `sentence-transformers` converts course descriptions into high-dimensional vectors
+
+3. **Search with FAISS**
+   - Vectors are stored in a **FAISS** index for fast similarity search
+   - A natural language query is also embedded and compared against stored vectors to find semantically relevant courses
+
+---
+
+## Features
+
+- 🔍 Natural language course search
+- 📈 Integration with real-time UMD/PlanetTerp APIs
+- 🧠 Smart recommendations using embeddings
+- 📅 UI coming soon for:
+  - Class planning
+  - Conflict detection
+  - Friend schedule comparison
+
+---
+
+## Tech Stack
+
+- **Next.js** – frontend framework  
+- **FAISS** – fast similarity search  
+- **HuggingFace Transformers** – semantic embeddings  
+- **UMD.io** & **PlanetTerp API** – real course and review data  
+- **Node.js** – backend logic  
+
+---
+
+## Current Progress
+
+### ✅ Done / Mostly Working
 - Create a vector database system to store and search through course information
 - Implement a search function that returns relevant courses based on user queries
 
-## Issues/To Do
+### 🛠️ For Team: To Do/Issues
+- Add UI components for:
+  - Adding “taken” and “planned” courses
+  - Time conflict detection
+  - Friend schedule comparisons
+ 
 - User adding already taken classes
 - User adding currently planned classes
 - UI showing time conflicts and other info
 - Friend schedules
 
+---
 
-## Info
+## Challenges
 
-Fetches course data from UMD.io and PlanetTerp APIs and stores in a vector database/json.
-Creates embeddings of course descriptions using HuggingFace's sentence transformers.
+- Creating an intuitive search from plain text queries  
+- Designing the embedding and similarity system from scratch  
+- Integrating multiple APIs with different formats  
+- Building this while learning new frameworks
+
+---
+
+## What's Next
+
+We’re currently working on:
+-
+
+We’d also love to implement:
+-
+
+---
+
+## Run Locally
+
 Stores in vector stores for similarity search later.
 > npm run train
 
 Run website locally
 > npm run dev
-
-## How It Works
-
-### Vector Database System
-Our course recommendation system uses FAISS (Facebook AI Similarity Search) to create and search through vector embeddings of course information. Here's how it works:
-
-1. **Data Collection**
-   - Fetches UMD Computer Science course data from UMD.io API
-   - Collects course information including descriptions, prerequisites, and sections
-   - Retrieves grade data from PlanetTerp API
-
-2. **Vector Embeddings**
-   - Converts course information into numerical vectors using HuggingFace's sentence transformers
-   - Each course becomes a high-dimensional vector that captures its semantic meaning
-   - Similar courses will have similar vector representations
-
-3. **FAISS Vector Store**
-   - Stores these vectors in a FAISS database
-   - Enables extremely fast similarity searches
-   - Can find the most relevant courses based on natural language queries
-
-4. **Search Process**
-   - User inputs a natural language query (e.g., "programming courses with data structures")
-   - Query is converted into the same vector space as the courses
-   - FAISS finds the most similar course vectors to the query vector
-   - Returns the top matching courses
-
-### Example Usage
-When you search for courses:
-1. Your search query is converted to a vector
-2. The system finds courses with similar vectors
-3. Results are ranked by similarity
-4. You get course recommendations that semantically match your query
-
-### Technical Stack
-- FAISS for vector storage and similarity search
-- HuggingFace's sentence transformers for embeddings
-- Next.js for the web interface
-- UMD.io and PlanetTerp APIs for course data
