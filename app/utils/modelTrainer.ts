@@ -4,6 +4,7 @@ import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
+import { PlanetTerpCourse } from "@/types";
 
 const CS_STORE_PATH = path.join(process.cwd(), "data", "cs_vectorstore.json");
 const GENED_STORE_PATH = path.join(process.cwd(), "data", "gened_vectorstore.json");
@@ -17,10 +18,15 @@ async function fetchCSCourses(): Promise<Document[]> {
     const response = await fetch("https://api.umd.io/v1/courses?dept_id=CMSC");
     const courses = await response.json();
 
+    const planetTerpResponse = await fetch("https://planetterp.com/api/v1/courses?department=CMSC");
+    const planetTerpCourses = await planetTerpResponse.json();
+
     return courses.map(
       (course: any) =>
         new Document({
-          pageContent: `${course.name}\n${course.description}\nAverage GPA: ${course.average_gpa || "N/A"}`,
+          pageContent: `${course.name}\n${course.description}\nAverage GPA: ${
+            planetTerpCourses.find((c: PlanetTerpCourse) => c.name === course.course_id)?.average_gpa || "N/A"
+          }`,
           metadata: {
             course_id: course.course_id,
             credits: course.credits,

@@ -40,7 +40,6 @@ export async function POST(req: Request) {
     await vectorStore.addDocuments(documents);
 
     const results = await vectorStore.similaritySearch(query, 5);
-    console.log("returning", results.map(transformDoc));
     return NextResponse.json(results.map(transformDoc));
   } catch (error: any) {
     console.error("❌ API Error:", error);

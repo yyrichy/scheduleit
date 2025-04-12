@@ -21,3 +21,14 @@ export interface Course {
   prerequisites: string[];
   averageGPA: number;
 }
+
+export interface PlanetTerpCourse {
+  department: string;
+  course_number: number; // ex 436
+  title: string; // ex Programming Handheld Systems
+  description: string;
+  credits: number;
+  average_gpa: number;
+  professors: string[];
+  name: string; // ex CMSC436
+}
