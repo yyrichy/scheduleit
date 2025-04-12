@@ -67,21 +67,20 @@ export default function CourseSearch() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ category, query }),
           });
-          console.log("response", response);
+          
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || "Gen Ed search failed");
           }
-          console.log("await json");
+          
           const data = await response.json();
-          console.log(data);
           genEdResults[category] = data;
         } catch (err) {
           console.error(`Failed to fetch Gen Ed courses for ${category}:`, err);
         }
       }
     }
-
+  
     setResults((prevResults) => ({
       ...prevResults,
       genEdCourses: genEdResults,

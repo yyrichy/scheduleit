@@ -15,11 +15,22 @@ const GEN_ED_CATEGORIES = ["DSHS", "DSHU", "DSNS", "DSNL", "DSSP", "DVCC", "DVUP
 
 async function fetchCSCourses(): Promise<Document[]> {
   try {
-    const response = await fetch("https://api.umd.io/v1/courses?dept_id=CMSC");
+    const response = await fetch("https://api.umd.io/v1/courses?dept_id=CMSC&per_page=100");
     const courses = await response.json();
 
-    const planetTerpResponse = await fetch("https://planetterp.com/api/v1/courses?department=CMSC");
-    const planetTerpCourses = await planetTerpResponse.json();
+    // Fetch all pages of PlanetTerp data
+    const [planetTerpResponse, planetTerpResponse2, planetTerpResponse3] = await Promise.all([
+      fetch("https://planetterp.com/api/v1/courses?department=CMSC"),
+      fetch("https://planetterp.com/api/v1/courses?department=CMSC&offset=100"),
+      fetch("https://planetterp.com/api/v1/courses?department=CMSC&offset=200"),
+    ]);
+
+    // Combine all responses into one array
+    const planetTerpCourses = [
+      ...(await planetTerpResponse.json()),
+      ...(await planetTerpResponse2.json()),
+      ...(await planetTerpResponse3.json()),
+    ];
 
     return courses.map(
       (course: any) =>
@@ -65,6 +76,57 @@ async function saveVectorStore(store: MemoryVectorStore, storePath: string) {
   await fs.writeFile(storePath, JSON.stringify(data));
 }
 
+const GEN_ED_STORE_PATHS = GEN_ED_CATEGORIES.reduce((acc, category) => {
+  acc[category] = path.join(process.cwd(), "data", `${category.toLowerCase()}_vectorstore.json`);
+  return acc;
+}, {} as Record<string, string>);
+
+async function fetchPlanetTerpData(courseId: string) {
+  try {
+    const response = await fetch(`https://planetterp.com/api/v1/course?name=${courseId}`);
+    if (!response.ok) throw new Error(`PlanetTerp API error: ${response.statusText}`);
+    console.log("response okay");
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+async function fetchAndProcessGenEdCourses(category: string) {
+  try {
+    const response = await fetch(`https://api.umd.io/v1/courses?gen_ed=${category}`);
+    const courses = await response.json();
+
+    const documents: Document[] = [];
+
+    for (const course of courses) {
+      const planetTerpData = await fetchPlanetTerpData(course.course_id);
+
+      const content = `${course.name}\n${course.description}\nAverage GPA: ${planetTerpData?.average_gpa || "N/A"}`;
+
+      documents.push(
+        new Document({
+          pageContent: content,
+          metadata: {
+            course_id: course.course_id,
+            credits: course.credits,
+            prerequisites: course.prerequisites || [],
+            gen_ed: course.gen_ed,
+            name: course.name,
+            type: "gen_ed",
+            planetTerpData: planetTerpData || null,
+          },
+        })
+      );
+    }
+
+    return documents;
+  } catch (error) {
+    console.error(`Failed to fetch ${category} courses:`, error);
+    return [];
+  }
+}
+
 export async function trainModel() {
   console.log("🚀 Starting model training...");
 
@@ -85,9 +147,12 @@ export async function trainModel() {
 
   // Train GenEd courses
   console.log("📚 Training GenEd courses...");
-  const genEdDocs = await fetchAllGenEdCourses();
-  const genEdVectorStore = await MemoryVectorStore.fromDocuments(genEdDocs, embeddings);
-  await saveVectorStore(genEdVectorStore, GENED_STORE_PATH);
+  for (const category of GEN_ED_CATEGORIES) {
+    console.log(`Processing ${category} courses...`);
+    const categoryDocs = await fetchAndProcessGenEdCourses(category);
+    const categoryVectorStore = await MemoryVectorStore.fromDocuments(categoryDocs, embeddings);
+    await saveVectorStore(categoryVectorStore, GEN_ED_STORE_PATHS[category]);
+  }
 
   console.log("✅ Training completed!");
 }

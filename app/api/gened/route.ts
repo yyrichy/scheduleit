@@ -1,20 +1,28 @@
 import { NextResponse } from "next/server";
-import fetch from "node-fetch";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import { OpenAIEmbeddings } from "@langchain/openai"; // Import OpenAIEmbeddings
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { transformDoc } from "@/utils/courseQuery";
+import fs from "fs/promises";
+import path from "path";
+import { Document } from "langchain/document";
+
+const GEN_ED_STORE_PATHS = {
+  DSHS: path.join(process.cwd(), "data", "dshs_vectorstore.json"),
+  DSHU: path.join(process.cwd(), "data", "dshu_vectorstore.json"),
+  DSNS: path.join(process.cwd(), "data", "dsns_vectorstore.json"),
+  DSNL: path.join(process.cwd(), "data", "dsnl_vectorstore.json"),
+  DSSP: path.join(process.cwd(), "data", "dssp_vectorstore.json"),
+  DVCC: path.join(process.cwd(), "data", "dvcc_vectorstore.json"),
+  DVUP: path.join(process.cwd(), "data", "dvup_vectorstore.json"),
+  SCIS: path.join(process.cwd(), "data", "scis_vectorstore.json"),
+};
 
 export async function POST(req: Request) {
   try {
     const { category, query } = await req.json();
-    const response = await fetch(`https://api.umd.io/v1/courses?gen_ed=${category}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch courses: ${response.statusText}`);
-    }
-    const courses = await response.json();
-    if (!courses || !Array.isArray(courses)) {
-      throw new Error("Invalid course data received");
+
+    if (!process.env.HUGGINGFACE_API_KEY) {
+      throw new Error("HUGGINGFACE_API_KEY is not set");
     }
 
     const embeddings = new HuggingFaceInferenceEmbeddings({
@@ -22,22 +30,12 @@ export async function POST(req: Request) {
       apiKey: process.env.HUGGINGFACE_API_KEY,
     });
 
-    // Create a new MemoryVectorStore instance with embeddings
-    const vectorStore = new MemoryVectorStore(embeddings);
+    // Load the vector store for the requested category
+    const storePath = GEN_ED_STORE_PATHS[category];
+    const storeData = JSON.parse(await fs.readFile(storePath, "utf-8"));
 
-    // Add courses to the vector store
-    const documents = courses.map((course) => ({
-      pageContent: `${course.name}\n${course.description}\nAverage GPA: ${course.average_gpa || "N/A"}`, // Include more relevant information
-      metadata: {
-        course_id: course.course_id,
-        gen_ed: course.gen_ed,
-        name: course.name,
-        credits: course.credits,
-        prerequisites: course.prerequisites || [],
-      },
-    }));
-
-    await vectorStore.addDocuments(documents);
+    const documents = storeData.documents.map((doc: any) => new Document(doc));
+    const vectorStore = await MemoryVectorStore.fromDocuments(documents, embeddings);
 
     const results = await vectorStore.similaritySearch(query, 5);
     return NextResponse.json(results.map(transformDoc));

@@ -4,11 +4,6 @@ import { loadVectorStores } from "./modelTrainer";
 interface PreferenceAnalysis {
   difficultyScore: number;
   levelPreference?: string;
-  topicFocus?: string[];
-  genEdPreferences?: {
-    categories: string[];
-    count?: number;
-  };
   reasoning: string;
 }
 
@@ -18,16 +13,11 @@ async function analyzeQuery(query: string): Promise<PreferenceAnalysis> {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `Analyze this course search query: "${query}"
-Consider both CS major requirements and general education requirements.
+Consider CS major requirements at University of Maryland, College Park.
 Return a JSON object with:
 {
   "difficultyScore": number 0-1 (0=easiest),
   "levelPreference": "1xx"/"2xx"/"3xx"/"4xx"/null,
-  "topicFocus": [],
-  "genEdPreferences": {
-    "categories": ["DSHS", "DSHU", "DSNS", "DSNL", "DSSP", "DVCC", "DVUP", "SCIS"],
-    "count": number or null
-  },
   "reasoning": "explanation"
 }`;
 
@@ -67,7 +57,6 @@ Return a JSON object with:
     return {
       difficultyScore,
       levelPreference,
-      topicFocus: [],
       reasoning: "pattern matching fallback",
     };
   }
@@ -79,10 +68,11 @@ export interface SearchResult {
   credits: number;
   prerequisites: string[];
   gpa: number;
-  gen_ed?: string[];  // Added gen_ed property as optional
+  gen_ed?: string[];
+  ranking: number; // Add ranking property
 }
 
-export function transformDoc(doc: any): SearchResult {
+export function transformDoc(doc: any, index: number): SearchResult {
   const gpaMatch = doc.pageContent.match(/Average GPA: ([\d.]+)/);
   return {
     course_id: doc.metadata.course_id,
@@ -91,6 +81,7 @@ export function transformDoc(doc: any): SearchResult {
     prerequisites: doc.metadata.prerequisites,
     gpa: gpaMatch ? parseFloat(gpaMatch[1]) : NaN,
     gen_ed: doc.metadata.gen_ed,
+    ranking: index + 1, // Add ranking based on position
   };
 }
 
@@ -101,10 +92,29 @@ export async function queryCourses(
   genEdRequirements?: Record<string, number>
 ): Promise<{ csCourses: SearchResult[]; genEdCourses: Record<string, SearchResult[]> }> {
   const { csStore, genEdStore } = await loadVectorStores();
+  const analysis = await analyzeQuery(query);
 
-  // Search CS courses
-  const csResults = await csStore.similaritySearch(query, csLimit);
-  console.log(query);
+  // Search CS courses with analysis
+  const csResults = await csStore.similaritySearch(query, csLimit * 2);
+  const filteredCSResults = csResults
+    .map((result, index) => transformDoc(result, index))
+    .filter((course) => {
+      // Filter by level if specified
+      if (analysis.levelPreference) {
+        const courseLevel = course.course_id.match(/\d{1}/)?.[0] + "xx";
+        if (courseLevel !== analysis.levelPreference) return false;
+      }
+
+      // Filter by difficulty if specified
+      if (analysis.difficultyScore !== undefined) {
+        const courseDifficulty = course.gpa ? 1 - course.gpa / 4.0 : 0.5;
+        const difficultyThreshold = 0.2;
+        return Math.abs(courseDifficulty - analysis.difficultyScore) <= difficultyThreshold;
+      }
+
+      return true;
+    })
+    .slice(0, csLimit);
 
   // Initialize an object to hold Gen Ed results by category
   const genEdCourses: Record<string, SearchResult[]> = {};
@@ -114,13 +124,26 @@ export async function queryCourses(
     for (const [category, count] of Object.entries(genEdRequirements)) {
       if (count > 0) {
         const categoryResults = await genEdStore.similaritySearch(`${query} ${category}`, genEdLimit);
-        genEdCourses[category] = categoryResults.map(transformDoc);
+        const filteredGenEdResults = categoryResults
+          .map((result, index) => transformDoc(result, index))
+          .filter((course) => {
+            // Filter by difficulty only for Gen-Ed
+            if (analysis.difficultyScore !== undefined) {
+              const courseDifficulty = course.gpa ? 1 - course.gpa / 4.0 : 0.5;
+              const difficultyThreshold = 0.2;
+              return Math.abs(courseDifficulty - analysis.difficultyScore) <= difficultyThreshold;
+            }
+            return true;
+          })
+          .slice(0, genEdLimit);
+
+        genEdCourses[category] = filteredGenEdResults;
       }
     }
   }
 
   return {
-    csCourses: csResults.map(transformDoc),
+    csCourses: filteredCSResults,
     genEdCourses,
   };
 }

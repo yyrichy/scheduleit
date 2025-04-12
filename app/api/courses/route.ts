@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     console.log("🔍 Analyzing query:", query);
 
     // Pass genEdRequirements to queryCourses
-    const { csCourses } = await queryCourses(query, 5, 5);
+    const { csCourses } = await queryCourses(query, 20, 5);
 
     return NextResponse.json({
       csCourses,
