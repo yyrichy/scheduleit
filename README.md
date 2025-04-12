@@ -1,6 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ScheduleIt - UMD Course Schedule Builder
+
+A smart course scheduling assistant for UMD students that helps build optimal schedules based on preferences, friend coordination, and course data.
+
+## Features
+
+- Natural language input for schedule preferences
+- Course conflict detection with friends' schedules
+- CS track requirement tracking
+- Integration with PlanetTerp API for grade averages
+- Integration with UMD.io API for real-time course availability
+- Smart schedule sorting based on multiple criteria
+- Friend coordination for shared free times
+
+## Tech Stack
+
+- Frontend: Next.js + React
+- API Integration: PlanetTerp, UMD.io
+- Natural Language Processing: Gemini AI
 
 ## Getting Started
+
+First, set up your environment variables:
+
+```bash
+cp .env.example .env.local
+```
 
 First, run the development server:
 

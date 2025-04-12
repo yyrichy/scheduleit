@@ -2,26 +2,41 @@
   "name": "scheduleit",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "train": "dotenv -e .env.local tsx scripts/train.ts"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "@huggingface/inference": "^2.8.1",
+    "@langchain/community": "^0.3.40",
+    "@langchain/core": "^0.3.44",
+    "@xenova/transformers": "^2.17.2",
+    "axios": "^1.8.4",
+    "faiss-node": "^0.5.1",
+    "langchain": "^0.3.21",
+    "next": "^15.3.0",
+    "ollama": "^0.4.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.3.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/next": "^8.0.7",
+    "@types/node": "^20.17.30",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.0",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
   }
 }
