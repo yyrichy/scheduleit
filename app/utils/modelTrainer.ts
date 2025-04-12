@@ -28,6 +28,7 @@ async function fetchCSCourses(): Promise<Document[]> {
             type: "cs",
             name: course.name,
           },
+          id: course.course_id,
         })
     );
   } catch (error) {
@@ -50,7 +51,7 @@ async function fetchGenEdCourses(category: string): Promise<any[]> {
 async function saveVectorStore(store: MemoryVectorStore, storePath: string) {
   const data = {
     documents: store.memoryVectors.map((vec) => ({
-      pageContent: vec.pageContent,
+      pageContent: vec.content,
       metadata: vec.metadata,
     })),
   };
@@ -133,6 +134,7 @@ export async function fetchAllGenEdCourses(): Promise<Document[]> {
             name: course.name,
             type: "gen_ed",
           },
+          id: course.course_id,
         })
       );
     }

@@ -4,11 +4,11 @@ import React from "react";
 import { useState } from "react";
 import RequirementsSelector from "./RequirementsSelector";
 import { GenEdRequirements } from "../types/schedule";
-import { SearchResult } from "@/utils/courseQuery";
+import { SearchResult } from "../utils/courseQuery";
 
 interface SearchResults {
   csCourses: SearchResult[];
-  genEdCourses: SearchResult[];
+  genEdCourses: Record<string, SearchResult[]>;
   genEdProgress: {
     completed: GenEdRequirements;
     remaining: GenEdRequirements;
@@ -19,7 +19,7 @@ export default function CourseSearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults>({
     csCourses: [],
-    genEdCourses: [],
+    genEdCourses: {},
     genEdProgress: {
       completed: {
         DSHS: 0,
@@ -56,6 +56,39 @@ export default function CourseSearch() {
     SCIS: 0,
   });
 
+  const searchGenEdCourses = async () => {
+    const genEdResults: Record<string, SearchResult[]> = {};
+
+    for (const [category, count] of Object.entries(genEdRequirements)) {
+      if (count > 0) {
+        try {
+          const response = await fetch("/api/gened", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ category, query }),
+          });
+          console.log("response", response);
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Gen Ed search failed");
+          }
+          console.log("await json");
+          const data = await response.json();
+          console.log(data);
+          genEdResults[category] = data;
+        } catch (err) {
+          console.error(`Failed to fetch Gen Ed courses for ${category}:`, err);
+        }
+      }
+    }
+
+    setResults((prevResults) => ({
+      ...prevResults,
+      genEdCourses: genEdResults,
+    }));
+  };
+
+  // Modify the searchCourses function to call searchGenEdCourses
   const searchCourses = async () => {
     if (!query.trim()) return;
     setLoading(true);
@@ -65,7 +98,7 @@ export default function CourseSearch() {
       const response = await fetch("/api/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, genEdRequirements }),
+        body: JSON.stringify({ query }),
       });
 
       if (!response.ok) {
@@ -74,7 +107,12 @@ export default function CourseSearch() {
       }
 
       const data = await response.json();
-      setResults(data); // Direct assignment as the API now returns the correct structure
+      setResults((prevResults) => ({
+        ...prevResults,
+        csCourses: data.csCourses,
+      }));
+
+      await searchGenEdCourses(); // Call the new Gen Ed search function
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       setError(`Search failed: ${errorMessage}`);
@@ -83,6 +121,8 @@ export default function CourseSearch() {
       setLoading(false);
     }
   };
+
+  console.log("results ", results);
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -138,8 +178,15 @@ export default function CourseSearch() {
         <div>
           <h2 className="text-xl font-bold mb-4">Recommended Gen-Ed Courses</h2>
           <div className="space-y-4">
-            {results.genEdCourses.map((result) => (
-              <CourseCard key={result.course_id} result={result} />
+            {Object.entries(results.genEdCourses).map(([category, courses]) => (
+              <div key={category}>
+                <h3 className="text-lg font-semibold mb-4">{category}</h3>
+                <div className="space-y-4">
+                  {courses.map((course) => (
+                    <CourseCard key={course.course_id} result={course} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -180,7 +227,7 @@ function CourseCard({ result }: { result: SearchResult }) {
       </div>
       <div className="mt-4 pt-4 border-t">
         <h4 className="font-semibold text-gray-700">Gen Ed:</h4>
-        <p className="text-gray-600">{result.gen_ed}</p>
+        <p className="text-gray-600">{result.gen_ed?.join(", ")}</p>
       </div>
     </div>
   );

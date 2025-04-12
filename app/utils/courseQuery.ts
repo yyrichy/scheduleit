@@ -82,43 +82,45 @@ export interface SearchResult {
   gen_ed?: string[];  // Added gen_ed property as optional
 }
 
+export function transformDoc(doc: any): SearchResult {
+  const gpaMatch = doc.pageContent.match(/Average GPA: ([\d.]+)/);
+  return {
+    course_id: doc.metadata.course_id,
+    content: doc.pageContent,
+    credits: doc.metadata.credits,
+    prerequisites: doc.metadata.prerequisites,
+    gpa: gpaMatch ? parseFloat(gpaMatch[1]) : NaN,
+    gen_ed: doc.metadata.gen_ed,
+  };
+}
+
 export async function queryCourses(
   query: string,
   csLimit: number = 5,
   genEdLimit: number = 5,
   genEdRequirements?: Record<string, number>
-): Promise<{ csCourses: SearchResult[], genEdCourses: SearchResult[] }> {
+): Promise<{ csCourses: SearchResult[]; genEdCourses: Record<string, SearchResult[]> }> {
   const { csStore, genEdStore } = await loadVectorStores();
-  
-  // Search both stores
-  const [csResults, allGenEdResults] = await Promise.all([
-    csStore.similaritySearch(query, csLimit),
-    genEdStore.similaritySearch(query, 50) // Get more results initially to filter
-  ]);
 
-  function transformDoc(doc: any): SearchResult {
-    const gpaMatch = doc.pageContent.match(/Average GPA: ([\d.]+)/);
-    return {
-      course_id: doc.metadata.course_id,
-      content: doc.pageContent,
-      credits: doc.metadata.credits,
-      prerequisites: doc.metadata.prerequisites,
-      gpa: gpaMatch ? parseFloat(gpaMatch[1]) : NaN,
-      gen_ed: doc.metadata.gen_ed
-    };
+  // Search CS courses
+  const csResults = await csStore.similaritySearch(query, csLimit);
+  console.log(query);
+
+  // Initialize an object to hold Gen Ed results by category
+  const genEdCourses: Record<string, SearchResult[]> = {};
+
+  // Perform similarity search for each Gen Ed category separately
+  if (genEdRequirements) {
+    for (const [category, count] of Object.entries(genEdRequirements)) {
+      if (count > 0) {
+        const categoryResults = await genEdStore.similaritySearch(`${query} ${category}`, genEdLimit);
+        genEdCourses[category] = categoryResults.map(transformDoc);
+      }
+    }
   }
-
-  // Filter GenEd results based on requirements
-  const genEdResults = genEdRequirements 
-    ? allGenEdResults
-        .filter(doc => doc.metadata.gen_ed?.some(
-          (genEd: string) => genEdRequirements[genEd] > 0
-        ))
-        .slice(0, genEdLimit)
-    : allGenEdResults.slice(0, genEdLimit);
 
   return {
     csCourses: csResults.map(transformDoc),
-    genEdCourses: genEdResults.map(transformDoc)
+    genEdCourses,
   };
 }
