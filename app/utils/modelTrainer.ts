@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import { PlanetTerpCourse } from "@/types";
+import { prerequisiteMapString } from "./prerequisiteMap";
 
 const CS_STORE_PATH = path.join(process.cwd(), "data", "cs_vectorstore.json");
 const GENED_STORE_PATH = path.join(process.cwd(), "data", "gened_vectorstore.json");
@@ -32,22 +33,21 @@ async function fetchCSCourses(): Promise<Document[]> {
       ...(await planetTerpResponse3.json()),
     ];
 
-    return courses.map(
-      (course: any) =>
-        new Document({
-          pageContent: `${course.name}\n${course.description}\nAverage GPA: ${
-            planetTerpCourses.find((c: PlanetTerpCourse) => c.name === course.course_id)?.average_gpa || "N/A"
-          }`,
-          metadata: {
-            course_id: course.course_id,
-            credits: course.credits,
-            prerequisites: course.prerequisites || "",
-            type: "cs",
-            name: course.name,
-          },
-          id: course.course_id,
-        })
-    );
+    return courses.map((course: any) => {
+      return new Document({
+        pageContent: `${course.name}\n${course.description}\nAverage GPA: ${
+          planetTerpCourses.find((c: PlanetTerpCourse) => c.name === course.course_id)?.average_gpa || "N/A"
+        }`,
+        metadata: {
+          course_id: course.course_id,
+          credits: course.credits,
+          prerequisites: prerequisiteMapString[course.course_id] || "",
+          type: "cs",
+          name: course.name,
+        },
+        id: course.course_id,
+      });
+    });
   } catch (error) {
     console.error("Failed to fetch CS courses:", error);
     return [];
