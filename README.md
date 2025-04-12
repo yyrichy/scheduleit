@@ -3,11 +3,14 @@
 # Notes for team
 
 ## Done/Mostly Working
-- [x] Create a vector database system to store and search through course information
-- [x] Implement a search function that returns relevant courses based on user queries
-- [x] Create a user-friendly web interface for course search
+- Create a vector database system to store and search through course information
+- Implement a search function that returns relevant courses based on user queries
 
-## Issues
+## Issues/To Do
+- User adding already taken classes
+- User adding currently planned classes
+- UI showing time conflicts and other info
+- Friend schedules
 
 
 ## Info
