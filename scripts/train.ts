@@ -12,7 +12,7 @@ async function main() {
   console.log('Using HF API Key:', process.env.HUGGINGFACE_API_KEY.slice(0, 8) + '...');
   
   try {
-    const { model, vectorStore } = await trainModel();
+    await trainModel();
     console.log('✅ Training complete!');
     console.log('✅ Vector store saved to course_vectors');
   } catch (error) {

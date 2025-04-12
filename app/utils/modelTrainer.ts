@@ -1,47 +1,20 @@
-import { config } from "dotenv";
-config();
-
-import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/huggingface_transformers";
 import { Document } from "@langchain/core/documents";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
-import { FaissStore } from "@langchain/community/vectorstores/faiss";
-import { fetchCourseData } from "./dataCollector.js";
-import { HfInference } from "@huggingface/inference";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { fetchCourseData } from "./dataCollector";
+import fs from 'fs';
+import path from 'path';
+
+const STORE_PATH = path.join(process.cwd(), 'data', 'vectorstore.json');
+let globalVectorStore: MemoryVectorStore | null = null;
 
 export async function trainModel() {
-  // Verify API key and model access
-  const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
-
-  try {
-    console.log("Verifying HuggingFace API access...");
-    // Test the model access with a simple embedding
-    await hf.featureExtraction({
-      model: "sentence-transformers/all-MiniLM-L6-v2",
-      inputs: "test",
-    });
-    console.log("✅ HuggingFace API access verified");
-  } catch (error) {
-    console.error("❌ HuggingFace API access failed:", error);
-    console.log("Please verify your API key at: https://huggingface.co/settings/tokens");
-    console.log("And ensure you have access to the model at: https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2");
-    throw error;
-  }
-
-  // Initialize the base model
-  const model = new HuggingFaceTransformersEmbeddings({
-    model: "microsoft/phi-2",
-  });
-
-  // Initialize embeddings
   const embeddings = new HuggingFaceInferenceEmbeddings({
     model: "sentence-transformers/all-MiniLM-L6-v2",
     apiKey: process.env.HUGGINGFACE_API_KEY,
   });
 
-  // Fetch and process course data
   const courses = await fetchCourseData();
-
-  // Create training documents
   const documents = courses.map(
     (course) =>
       new Document({
@@ -61,9 +34,51 @@ export async function trainModel() {
       })
   );
 
-  // Create vector store
-  const vectorStore = await FaissStore.fromDocuments(documents, embeddings);
-  await vectorStore.save("course_vectors");
+  globalVectorStore = await MemoryVectorStore.fromDocuments(documents, embeddings);
+  
+  // Save to disk
+  const dataDir = path.dirname(STORE_PATH);
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  
+  const serializedData = {
+    documents: documents.map(doc => ({
+      pageContent: doc.pageContent,
+      metadata: doc.metadata
+    }))
+  };
+  
+  fs.writeFileSync(STORE_PATH, JSON.stringify(serializedData, null, 2));
+  console.log("✅ Vector store saved to disk with", documents.length, "courses");
+  
+  return { vectorStore: globalVectorStore };
+}
 
-  return { model, vectorStore };
+export async function loadVectorStore() {
+  if (globalVectorStore) return globalVectorStore;
+  
+  if (!fs.existsSync(STORE_PATH)) {
+    throw new Error("Vector store not found. Please run training first.");
+  }
+  
+  const embeddings = new HuggingFaceInferenceEmbeddings({
+    model: "sentence-transformers/all-MiniLM-L6-v2",
+    apiKey: process.env.HUGGINGFACE_API_KEY,
+  });
+  
+  const data = JSON.parse(fs.readFileSync(STORE_PATH, 'utf-8'));
+  const documents = data.documents.map((doc: { pageContent: any; metadata: any; }) => 
+    new Document({
+      pageContent: doc.pageContent,
+      metadata: doc.metadata
+    })
+  );
+  
+  globalVectorStore = await MemoryVectorStore.fromDocuments(documents, embeddings);
+  return globalVectorStore;
+}
+
+export function getVectorStore() {
+  return globalVectorStore;
 }

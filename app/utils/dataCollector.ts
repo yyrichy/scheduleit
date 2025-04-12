@@ -1,5 +1,5 @@
 import axios from "axios";
-import { prerequisiteMap } from "./prerequisiteMap.js";
+import { prerequisiteMap } from "./prerequisiteMap";
 
 interface Course {
   course_id: string;

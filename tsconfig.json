@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
-    "types": ["node", "next"],
+    "types": [
+      "node",
+      "next"
+    ],
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -10,9 +13,32 @@
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./app/*"]
-    }
+      "@/*": [
+        "./app/*"
+      ]
+    },
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

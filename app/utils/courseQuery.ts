@@ -1,19 +1,22 @@
-import { FaissStore } from "@langchain/community/vectorstores/faiss";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { loadVectorStore } from "./modelTrainer";
 
-export async function queryCourses(query: string, k: number = 5) {
-  const embeddings = new HuggingFaceInferenceEmbeddings({
-    model: "sentence-transformers/all-MiniLM-L6-v2",
-    apiKey: process.env.HUGGINGFACE_API_KEY,
-  });
+type CourseResult = {
+  course_id?: string;
+  content: string;
+  credits?: number;
+  prerequisites?: string[];
+};
 
-  const vectorStore = await FaissStore.load("course_vectors", embeddings);
+export async function queryCourses(query: string, k: number = 5): Promise<CourseResult[]> {
+  const vectorStore = await loadVectorStore();
   const results = await vectorStore.similaritySearch(query, k);
-  
-  return results.map(doc => ({
-    course_id: doc.metadata.course_id,
+
+  return results.map((doc) => ({
+    course_id: doc.metadata?.course_id,
     content: doc.pageContent,
-    credits: doc.metadata.credits,
-    prerequisites: doc.metadata.prerequisites
+    credits: doc.metadata?.credits,
+    prerequisites: doc.metadata?.prerequisites,
   }));
 }

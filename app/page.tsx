@@ -1,9 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import PreferenceInput from "./components/PreferenceInput";
-import ScheduleDisplay from "./components/ScheduleDisplay";
-import { CourseRecommendation } from "./types";
 import React from "react";
 import CourseSearch from './components/CourseSearch';
 

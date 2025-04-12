@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "train": "dotenv -e .env.local tsx scripts/train.ts"
+    "train": "dotenv -e .env.local tsx scripts/train.ts",
+    "test-query": "dotenv -e .env.local tsx scripts/testQuery.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
