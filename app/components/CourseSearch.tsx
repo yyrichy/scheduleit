@@ -77,14 +77,16 @@ export default function CourseSearch() {
                 <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">{result.credits} credits</span>
                 <span
                   className={`text-sm px-2 py-1 rounded ${
-                    result.gpa >= 3.5
-                      ? "bg-green-100 text-green-800"
-                      : result.gpa >= 3.0
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
+                    result.gpa != null && !isNaN(result.gpa)
+                      ? result.gpa >= 3.5
+                        ? "bg-green-100 text-green-800"
+                        : result.gpa >= 3.0
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                      : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  Avg. GPA: {result.gpa.toFixed(2)}
+                  Avg. GPA: {result.gpa != null && !isNaN(result.gpa) ? result.gpa.toFixed(2) : "N/A"}
                 </span>
               </div>
             </div>

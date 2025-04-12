@@ -75,17 +75,15 @@ export async function queryCourses(query: string, k: number = 5) {
   // Sort results based on AI analysis
   const sortedResults = results
     .map((doc) => {
-      const gpa = parseFloat(doc.pageContent.match(/Average GPA: ([\d.]+)/)?.[1] || "3.0");
+      const gpaMatch = doc.pageContent.match(/Average GPA: ([\d.]+)/);
+      const actualGpa = gpaMatch ? parseFloat(gpaMatch[1]) : null;
+      const calculationGpa = actualGpa || 2.5; // Use 2.5 for difficulty calculation when GPA is missing
       const courseLevel = doc.metadata?.course_id.match(/\d/)?.[0] || "0";
 
-      // Calculate match score based on multiple factors
       let score = 0;
-
-      // Difficulty match (0-1)
-      const difficultyMatch = 1 - Math.abs((4.0 - gpa) / 4.0 - preferences.difficultyScore);
+      const difficultyMatch = 1 - Math.abs((4.0 - calculationGpa) / 4.0 - preferences.difficultyScore);
       score += difficultyMatch;
 
-      // Level match if specified
       if (preferences.levelPreference) {
         const levelMatch = preferences.levelPreference.startsWith(courseLevel) ? 1 : 0;
         score += levelMatch;
@@ -102,6 +100,6 @@ export async function queryCourses(query: string, k: number = 5) {
     content: doc.pageContent,
     credits: doc.metadata?.credits,
     prerequisites: doc.metadata?.prerequisites,
-    gpa: parseFloat(doc.pageContent.match(/Average GPA: ([\d.]+)/)?.[1] || "3.0"),
+    gpa: parseFloat(doc.pageContent.match(/Average GPA: ([\d.]+)/)?.[1] || "NaN"), // Display NaN when GPA is missing
   }));
 }
