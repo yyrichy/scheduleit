@@ -1,10 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { loadVectorStore } from "./modelTrainer";
+import { loadVectorStores } from "./modelTrainer";
 
 interface PreferenceAnalysis {
   difficultyScore: number;
   levelPreference?: string;
   topicFocus?: string[];
+  genEdPreferences?: {
+    categories: string[];
+    count?: number;
+  };
   reasoning: string;
 }
 
@@ -14,12 +18,17 @@ async function analyzeQuery(query: string): Promise<PreferenceAnalysis> {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `Analyze this course search query: "${query}"
-You must respond with a raw JSON object (no markdown, no backticks) containing:
+Consider both CS major requirements and general education requirements.
+Return a JSON object with:
 {
-  "difficultyScore": number between 0-1 (0=easiest),
-  "levelPreference": "1xx" or "2xx" or "3xx" or "4xx" or null,
-  "topicFocus": string array of topics,
-  "reasoning": "brief explanation"
+  "difficultyScore": number 0-1 (0=easiest),
+  "levelPreference": "1xx"/"2xx"/"3xx"/"4xx"/null,
+  "topicFocus": [],
+  "genEdPreferences": {
+    "categories": ["DSHS", "DSHU", "DSNS", "DSNL", "DSSP", "DVCC", "DVUP", "SCIS"],
+    "count": number or null
+  },
+  "reasoning": "explanation"
 }`;
 
     const result = await model.generateContent(prompt);
@@ -64,42 +73,52 @@ You must respond with a raw JSON object (no markdown, no backticks) containing:
   }
 }
 
-export async function queryCourses(query: string, k: number = 5) {
-  const vectorStore = await loadVectorStore();
-  console.log("🔍 ...");
-  const preferences = await analyzeQuery(query);
-  console.log("📊 Analyzed preferences:", preferences);
+export interface SearchResult {
+  course_id: string;
+  content: string;
+  credits: number;
+  prerequisites: string[];
+  gpa: number;
+  gen_ed?: string[];  // Added gen_ed property as optional
+}
 
-  const results = await vectorStore.similaritySearch(query, k * 2);
+export async function queryCourses(
+  query: string,
+  csLimit: number = 5,
+  genEdLimit: number = 5,
+  genEdRequirements?: Record<string, number>
+): Promise<{ csCourses: SearchResult[], genEdCourses: SearchResult[] }> {
+  const { csStore, genEdStore } = await loadVectorStores();
+  
+  // Search both stores
+  const [csResults, allGenEdResults] = await Promise.all([
+    csStore.similaritySearch(query, csLimit),
+    genEdStore.similaritySearch(query, 50) // Get more results initially to filter
+  ]);
 
-  // Sort results based on AI analysis
-  const sortedResults = results
-    .map((doc) => {
-      const gpaMatch = doc.pageContent.match(/Average GPA: ([\d.]+)/);
-      const actualGpa = gpaMatch ? parseFloat(gpaMatch[1]) : null;
-      const calculationGpa = actualGpa || 2.5; // Use 2.5 for difficulty calculation when GPA is missing
-      const courseLevel = doc.metadata?.course_id.match(/\d/)?.[0] || "0";
+  function transformDoc(doc: any): SearchResult {
+    const gpaMatch = doc.pageContent.match(/Average GPA: ([\d.]+)/);
+    return {
+      course_id: doc.metadata.course_id,
+      content: doc.pageContent,
+      credits: doc.metadata.credits,
+      prerequisites: doc.metadata.prerequisites,
+      gpa: gpaMatch ? parseFloat(gpaMatch[1]) : NaN,
+      gen_ed: doc.metadata.gen_ed
+    };
+  }
 
-      let score = 0;
-      const difficultyMatch = 1 - Math.abs((4.0 - calculationGpa) / 4.0 - preferences.difficultyScore);
-      score += difficultyMatch;
+  // Filter GenEd results based on requirements
+  const genEdResults = genEdRequirements 
+    ? allGenEdResults
+        .filter(doc => doc.metadata.gen_ed?.some(
+          (genEd: string) => genEdRequirements[genEd] > 0
+        ))
+        .slice(0, genEdLimit)
+    : allGenEdResults.slice(0, genEdLimit);
 
-      if (preferences.levelPreference) {
-        const levelMatch = preferences.levelPreference.startsWith(courseLevel) ? 1 : 0;
-        score += levelMatch;
-      }
-
-      return { doc, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .map(({ doc }) => doc)
-    .slice(0, k);
-
-  return sortedResults.map((doc) => ({
-    course_id: doc.metadata?.course_id,
-    content: doc.pageContent,
-    credits: doc.metadata?.credits,
-    prerequisites: doc.metadata?.prerequisites,
-    gpa: parseFloat(doc.pageContent.match(/Average GPA: ([\d.]+)/)?.[1] || "NaN"), // Display NaN when GPA is missing
-  }));
+  return {
+    csCourses: csResults.map(transformDoc),
+    genEdCourses: genEdResults.map(transformDoc)
+  };
 }

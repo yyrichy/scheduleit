@@ -1,5 +1,25 @@
 # UMD Course Scheduler
 
+# Notes for team
+
+## Done/Mostly Working
+- [x] Create a vector database system to store and search through course information
+- [x] Implement a search function that returns relevant courses based on user queries
+- [x] Create a user-friendly web interface for course search
+
+## Issues
+
+
+## Info
+
+Fetches course data from UMD.io and PlanetTerp APIs and stores in a vector database/json.
+Creates embeddings of course descriptions using HuggingFace's sentence transformers.
+Stores in vector stores for similarity search later.
+> npm run train
+
+Run website locally
+> npm run dev
+
 ## How It Works
 
 ### Vector Database System
