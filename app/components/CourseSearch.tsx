@@ -1,5 +1,6 @@
 'use client';
 
+import React from "react";
 import { useState } from "react";
 
 interface SearchResult {
@@ -7,6 +8,7 @@ interface SearchResult {
   content: string;
   credits: number;
   prerequisites: string[];
+  gpa: number;
 }
 
 export default function CourseSearch() {
@@ -17,7 +19,6 @@ export default function CourseSearch() {
 
   const searchCourses = async () => {
     if (!query.trim()) return;
-
     setLoading(true);
     setError("");
 
@@ -47,14 +48,14 @@ export default function CourseSearch() {
   return (
     <div className="max-w-4xl mx-auto p-4">
       <div className="mb-8">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-4">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && searchCourses()}
-            placeholder="Search courses (e.g., 'data structures', 'machine learning')"
-            className="flex-1 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
+            placeholder="Try: 'Show me easy programming classes' or 'I want challenging 400-level courses'"
+            className="p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
           />
           <button
             onClick={searchCourses}
@@ -72,7 +73,20 @@ export default function CourseSearch() {
           <div key={result.course_id} className="bg-white p-6 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-bold text-gray-900">{result.course_id}</h3>
-              <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">{result.credits} credits</span>
+              <div className="flex gap-2">
+                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">{result.credits} credits</span>
+                <span
+                  className={`text-sm px-2 py-1 rounded ${
+                    result.gpa >= 3.5
+                      ? "bg-green-100 text-green-800"
+                      : result.gpa >= 3.0
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  Avg. GPA: {result.gpa.toFixed(2)}
+                </span>
+              </div>
             </div>
             <div className="prose prose-sm max-w-none">
               <div className="whitespace-pre-wrap text-gray-700">{result.content}</div>
