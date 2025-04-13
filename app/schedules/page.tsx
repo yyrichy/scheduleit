@@ -90,17 +90,7 @@ export default function SchedulesPage() {
                         return (
                           <details key={course.course_id} className="border-t pt-4">
                             <summary className="font-medium text-lg flex items-center justify-between cursor-pointer hover:opacity-80">
-                              <span className={`
-                                ${course.course_id.startsWith('CMSC') ? 'text-blue-600' : ''}
-                                ${course.gen_ed?.includes('DSHS') ? 'text-purple-600' : ''}
-                                ${course.gen_ed?.includes('DSHU') ? 'text-pink-600' : ''}
-                                ${course.gen_ed?.includes('DSNS') ? 'text-green-600' : ''}
-                                ${course.gen_ed?.includes('DSNL') ? 'text-emerald-600' : ''}
-                                ${course.gen_ed?.includes('DSSP') ? 'text-orange-600' : ''}
-                                ${course.gen_ed?.includes('DVCC') ? 'text-red-600' : ''}
-                                ${course.gen_ed?.includes('DVUP') ? 'text-yellow-600' : ''}
-                                ${course.gen_ed?.includes('SCIS') ? 'text-cyan-600' : ''}
-                              `}>
+                              <span>
                                 {course.course_id}
                               </span>
                               <Badge variant="outline">Section {section.section_id}</Badge>
