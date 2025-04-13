@@ -19,10 +19,18 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
     }
 
     const colors = [
-      'bg-red-100', 'bg-pink-100', 'bg-rose-100', 
-      'bg-fuchsia-100', 'bg-purple-100', 'bg-violet-100',
-      'bg-red-50', 'bg-pink-50', 'bg-rose-50',
-      'bg-fuchsia-50', 'bg-purple-50', 'bg-violet-50'
+      "bg-red-100",
+      "bg-pink-100",
+      "bg-rose-100",
+      "bg-fuchsia-100",
+      "bg-purple-100",
+      "bg-violet-100",
+      "bg-red-50",
+      "bg-pink-50",
+      "bg-rose-50",
+      "bg-fuchsia-50",
+      "bg-purple-50",
+      "bg-violet-50",
     ];
 
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -50,8 +58,22 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
     return sections.filter((section) => section.meetings.some((meeting) => meeting.days.includes(shortDay)));
   };
 
+  const asyncClassesCount = sections.filter(
+    (section) => section.meetings.length === 0 || section.meetings.every((meeting) => !meeting.days)
+  ).length;
+
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold">Weekly Schedule</h2>
+        {asyncClassesCount > 0 && (
+          <div className="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-full">
+            <span className="text-purple-700 font-medium">{asyncClassesCount}</span>
+            <span className="text-purple-600 text-sm">Async Classes</span>
+          </div>
+        )}
+      </div>
+
       <div className="border border-red-200 rounded-lg overflow-hidden bg-white shadow-lg">
         <div className="grid grid-cols-6 text-sm">
           {/* Header remains the same */}
@@ -60,7 +82,7 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
           {hours.map((hour) => (
             <React.Fragment key={hour}>
               <div className="border-b border-r p-2 text-sm text-red-600">
-                {hour === 12 ? '12:00 PM' : hour > 12 ? `${hour-12}:00 PM` : `${hour}:00 AM`}
+                {hour === 12 ? "12:00 PM" : hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 AM`}
               </div>
 
               {days.map((day) => {
