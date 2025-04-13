@@ -138,7 +138,7 @@ export default function SchedulesPage() {
           <CarouselPrevious className="hidden md:flex h-12 w-12 bg-white border-red-200 text-red-600 hover:bg-red-100">
             <X className="h-8 w-8" />
           </CarouselPrevious>
-          <CarouselNext className="hidden md:flex h-12 w-12 bg-white border-green-200 text-green-600 hover:bg-green-100">
+          <CarouselNext className="hidden md:flex h-12 w-12 bg-white border-red-200 text-red-600 hover:bg-red-100">
             <Heart className="h-8 w-8" />
           </CarouselNext>
         </Carousel>

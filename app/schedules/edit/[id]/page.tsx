@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Section } from "@/types/section";
+import { X } from "lucide-react";
 
 export default function EditSchedulePage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -332,9 +333,12 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
                 {schedule.courses.map((course) => (
                   <div key={course.course_id} className="flex items-center justify-between p-2 border rounded">
                     <span>{course.course_id}</span>
-                    <Button variant="destructive" size="sm" onClick={() => handleRemoveCourse(course.course_id)}>
-                      Remove
-                    </Button>
+                    <button
+                      onClick={() => handleRemoveCourse(course.course_id)}
+                      className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
                 ))}
               </div>
