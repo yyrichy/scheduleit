@@ -4,17 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { WeeklySchedule } from '../components/WeeklySchedule';
 import { Schedule } from '../types/schedule';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel";
+} from "../components/ui/carousel";
 import Link from 'next/link';
 import { Heart, X } from "lucide-react";
+import React from "react";
 
 export default function SchedulesPage() {
   const router = useRouter();

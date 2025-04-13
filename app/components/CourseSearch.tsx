@@ -3,14 +3,12 @@
 import React from "react";
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import { Heart } from "lucide-react"; // Add this import
+import { Heart } from "lucide-react";
 import RequirementsSelector from "./RequirementsSelector";
 import { GenEdRequirements, Schedule, SearchResults } from "../types/schedule";
 import { SearchResult } from "../utils/courseQuery";
 import { CourseTagsInput } from "./CourseTagsInput";
 import { checkScheduleConflicts, getScoredSections } from "../utils/sectionUtils";
-import { ScoredSection } from "../types/section";
-import { WeeklySchedule } from "./WeeklySchedule";
 
 export default function CourseSearch() {
   const router = useRouter();

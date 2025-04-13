@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { WeeklySchedule } from "../../../components/WeeklySchedule";
 import { Schedule } from "../../../types/schedule";
 import { SearchResult } from "../../../utils/courseQuery";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Section } from "@/types/section";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/ui/button";
+import { Section } from "../../../types/section";
 import { X } from "lucide-react";
+import React from "react";
 
 export default function EditSchedulePage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -243,7 +244,7 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
         >
           ← Back
         </button>
-        <h1 className="text-3xl font-bold">Edit Schedule</h1>
+        <h1 className="text-3xl font-bold">Your Perfect Match Made Here</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
