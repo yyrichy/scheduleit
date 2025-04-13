@@ -19,6 +19,7 @@ interface SearchResults {
 export default function CourseSearch() {
   const [query, setQuery] = useState("");
   const [completedCourses, setCompletedCourses] = useState<string[]>([]);
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);  // Add this line
   const [results, setResults] = useState<SearchResults>({
     csCourses: [],
     genEdCourses: {},
@@ -125,6 +126,13 @@ export default function CourseSearch() {
 
   console.log("results ", results);
 
+  // Add this function to filter courses
+  const filterAvailableCourses = (courses: SearchResult[]) => {
+    if (!showOnlyAvailable) return courses;
+    return courses.filter(course => course.prerequisites_met);
+  };
+
+  // Modify the return statement where you render CS courses
   return (
     <div className="max-w-4xl mx-auto p-4">
       <RequirementsSelector onRequirementsChange={setGenEdRequirements} />
@@ -132,6 +140,21 @@ export default function CourseSearch() {
       <div className="mb-8">
         <div className="flex flex-col gap-4">
           <CourseTagsInput value={completedCourses} onChange={setCompletedCourses} />
+          
+          {/* Add this checkbox */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showAvailable"
+              checked={showOnlyAvailable}
+              onChange={(e) => setShowOnlyAvailable(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <label htmlFor="showAvailable" className="text-sm text-gray-700">
+              Show only available CMSC courses based on prerequisites
+            </label>
+          </div>
+
           <input
             type="text"
             value={query}
@@ -166,11 +189,11 @@ export default function CourseSearch() {
       </div>
 
       <div className="space-y-8">
-        {/* CS Courses Section */}
+        {/* Modified CS Courses Section */}
         <div>
           <h2 className="text-xl font-bold mb-4">Computer Science Courses</h2>
           <div className="space-y-4">
-            {results.csCourses.map((result) => (
+            {filterAvailableCourses(results.csCourses).map((result) => (
               <CourseCard key={result.course_id} result={result} />
             ))}
           </div>
