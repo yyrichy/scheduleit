@@ -132,6 +132,57 @@ export default function CourseSearch() {
     return courses.filter(course => course.prerequisites_met);
   };
 
+  // Add these new state variables with the existing ones
+  const [creditRange, setCreditRange] = useState([12, 15]); // Default range
+  const [generatedSchedules, setGeneratedSchedules] = useState<Array<SearchResult[]>>([]);
+
+  // Add this function to generate schedules
+  // Replace the creditRange state with a single targetCredits state
+  const [targetCredits, setTargetCredits] = useState(15); // Default 15 credits
+  
+  // Modify the generateSchedules function
+  const generateSchedules = () => {
+    const allCourses = [...results.csCourses];
+    Object.values(results.genEdCourses).forEach(courses => {
+      allCourses.push(...courses);
+    });
+  
+    const availableCourses = showOnlyAvailable 
+      ? allCourses.filter(course => course.prerequisites_met)
+      : allCourses;
+  
+    const schedules: Array<SearchResult[]> = [];
+    const generateCombinations = (
+      courses: SearchResult[],
+      currentSchedule: SearchResult[],
+      currentCredits: number,
+      startIndex: number
+    ) => {
+      // Allow ±1 credit from target
+      if (currentCredits >= targetCredits - 1 && currentCredits <= targetCredits + 1) {
+        schedules.push([...currentSchedule]);
+      }
+  
+      for (let i = startIndex; i < courses.length; i++) {
+        const course = courses[i];
+        const newCredits = currentCredits + (Number(course.credits) || 0);
+        
+        if (newCredits <= targetCredits + 1) {
+          generateCombinations(
+            courses,
+            [...currentSchedule, course],
+            newCredits,
+            i + 1
+          );
+        }
+      }
+    };
+  
+    generateCombinations(availableCourses, [], 0, 0);
+    setGeneratedSchedules(schedules.slice(0, 10));
+  };
+
+  // Replace the credit range UI with a single slider
   return (
     <div className="max-w-4xl mx-auto p-4">
 
@@ -235,6 +286,58 @@ export default function CourseSearch() {
           </div>
         </div>
       </div>
+      
+      {/* Add this after the search button */}
+      <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
+        <h2 className="text-xl font-bold mb-4">Schedule Generator</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Target Credits: {targetCredits}
+            </label>
+            <input
+              type="range"
+              min="12"
+              max="20"
+              value={targetCredits}
+              onChange={(e) => setTargetCredits(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <button
+            onClick={generateSchedules}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+          >
+            Generate Schedules
+          </button>
+        </div>
+
+        {/* Display generated schedules */}
+        {generatedSchedules.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-4">Possible Schedules</h3>
+            <div className="space-y-6">
+              {generatedSchedules.map((schedule, index) => (
+                <div key={index} className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">
+                    Schedule {index + 1} - {schedule.reduce((sum, course) => sum + (Number(course.credits) || 0), 0)} credits
+                  </h4>
+                  <div className="grid gap-2">
+                    {schedule.map((course) => (
+                      <div key={course.course_id} className="flex justify-between items-center">
+                        <span>{course.course_id}</span>
+                        <span>{course.credits} credits</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ... rest of your existing code ... */}
     </div>
   );
 }
