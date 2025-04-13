@@ -33,38 +33,35 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
 
   const parseTime = (timeStr: string) => {
     const [time, period] = timeStr.split(/(?=[AP]M)/i);
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hours, minutes] = time.split(":").map(Number);
     let hour = hours;
-    
-    if (period.toLowerCase() === 'pm' && hours !== 12) {
+
+    // For PM times, add 12 to convert to 24-hour format (except for 12 PM)
+    if (period.toLowerCase() === "pm" && hours !== 12) {
       hour += 12;
-    } else if (period.toLowerCase() === 'am' && hours === 12) {
+    } else if (period.toLowerCase() === "am" && hours === 12) {
       hour = 0;
     }
-    
+
     return { hour, minutes };
   };
 
   const getCoursesForTimeAndDay = (hour: number, day: string) => {
-    const shortDay = day[0] + (day === 'Thursday' ? 'h' : '');
-    return sections.filter(section => {
-      return section.meetings.some(meeting => {
+    const shortDay = day[0] + (day === "Thursday" ? "h" : "");
+    return sections.filter((section) => {
+      return section.meetings.some((meeting) => {
         if (!meeting.days.includes(shortDay)) return false;
-        
+
         const startTime = parseTime(meeting.start_time);
         const endTime = parseTime(meeting.end_time);
-        
-        // Check if current hour falls within the course time
-        if (startTime.hour <= hour && hour < endTime.hour) {
-          return true;
-        }
-        
-        // Handle edge case for courses ending exactly on the hour
-        if (hour === endTime.hour && endTime.minutes === 0) {
-          return false;
-        }
-        
-        return false;
+
+        // Convert everything to minutes for easier comparison
+        const currentTimeInMinutes = hour * 60;
+        const startTimeInMinutes = startTime.hour * 60 + startTime.minutes;
+        const endTimeInMinutes = endTime.hour * 60 + endTime.minutes;
+
+        // Check if current hour block overlaps with class time
+        return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
       });
     });
   };

@@ -1,29 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { WeeklySchedule } from '../../../components/WeeklySchedule';
-import { Schedule } from '../../../types/schedule';
-import { SearchResult } from '../../../utils/courseQuery';
+import { useEffect, useState, use } from "react";
+import { useRouter } from "next/navigation";
+import { WeeklySchedule } from "../../../components/WeeklySchedule";
+import { Schedule } from "../../../types/schedule";
+import { SearchResult } from "../../../utils/courseQuery";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function EditSchedulePage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const resolvedParams = use(params);
   const [schedule, setSchedule] = useState<Schedule | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<SearchResult | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
 
   useEffect(() => {
-    const storedSchedules = localStorage.getItem('generatedSchedules');
+    const storedSchedules = localStorage.getItem("generatedSchedules");
     if (storedSchedules) {
       const schedules = JSON.parse(storedSchedules);
-      setSchedule(schedules[parseInt(params.id)]);
+      setSchedule(schedules[parseInt(resolvedParams.id)]);
     }
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   const handleSearch = async () => {
     try {
@@ -36,7 +37,7 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
       const response = await fetch(`https://api.umd.io/v1/courses?dept_id=${deptId}`);
       if (!response.ok) throw new Error("Search failed");
       const data = await response.json();
-      
+
       // Transform the API response to match our SearchResult type
       const transformedResults: SearchResult[] = data.map((course: any) => ({
         course_id: course.course_id,
@@ -44,42 +45,64 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
         credits: parseInt(course.credits),
         prerequisites: course.relationships?.prereqs || "",
       }));
-      
+
       setSearchResults(transformedResults);
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
     }
   };
 
   const formatMeetings = (meetings: any[]) => {
-    return meetings.map(meeting => ({
+    return meetings.map((meeting) => ({
       days: meeting.days,
       start_time: formatTime(meeting.start_time),
       end_time: formatTime(meeting.end_time),
       building: meeting.building || "",
       room: meeting.room || "",
-      classtype: meeting.classtype || ""
+      classtype: meeting.classtype || "",
     }));
   };
 
   const formatTime = (time: string) => {
     if (!time) return "12:00PM";
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const period = hour >= 12 ? 'PM' : 'AM';
+
+    // Check if time already includes AM/PM
+    const isPM = time.toLowerCase().includes("pm");
+    const isAM = time.toLowerCase().includes("am");
+
+    // Remove AM/PM and trim
+    const cleanTime = time
+      .toLowerCase()
+      .replace(/(am|pm)/, "")
+      .trim();
+    const [hours, minutes] = cleanTime.split(":");
+    let hour = parseInt(hours);
+
+    // If time already had PM and hour is not 12, add 12 to convert to 24-hour
+    if (isPM && hour !== 12) {
+      hour += 12;
+    }
+    // If time had AM and hour is 12, set to 0
+    if (isAM && hour === 12) {
+      hour = 0;
+    }
+
+    // Convert back to 12-hour format
+    const period = hour >= 12 ? "PM" : "AM";
     const formattedHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+
     return `${formattedHour}:${minutes}${period}`;
   };
 
   const handleAddCourse = async (course: SearchResult) => {
     if (!schedule) return;
-  
+
     try {
       // Fetch sections for the selected course
       const response = await fetch(`https://api.umd.io/v1/courses/sections?course_id=${course.course_id}`);
       if (!response.ok) throw new Error("Failed to fetch sections");
       const sectionsData = await response.json();
-  
+
       // Transform sections data to match our Section type
       const newSection = {
         course: course.course_id,
@@ -88,50 +111,53 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
         open_seats: sectionsData[0].open_seats || "0",
         waitlist: sectionsData[0].waitlist || "0",
         instructors: sectionsData[0].instructors,
-        meetings: formatMeetings(sectionsData[0].meetings)
+        meetings: formatMeetings(sectionsData[0].meetings),
       };
-  
+
       const newSchedule = {
         ...schedule,
-        courses: [...schedule.courses, { 
-          course_id: course.course_id,
-          content: course.content,
-          credits: course.credits,
-          prerequisites: course.prerequisites,
-        }],
+        courses: [
+          ...schedule.courses,
+          {
+            course_id: course.course_id,
+            content: course.content,
+            credits: course.credits,
+            prerequisites: course.prerequisites,
+          },
+        ],
         sections: [...schedule.sections, newSection],
       };
-  
+
       // Log for debugging
-      console.log('New section being added:', newSection);
-      console.log('Updated schedule:', newSchedule);
-  
+      console.log("New section being added:", newSection);
+      console.log("Updated schedule:", newSchedule);
+
       setSchedule(newSchedule);
-      const schedules = JSON.parse(localStorage.getItem('generatedSchedules') || '[]');
+      const schedules = JSON.parse(localStorage.getItem("generatedSchedules") || "[]");
       schedules[parseInt(params.id)] = newSchedule;
-      localStorage.setItem('generatedSchedules', JSON.stringify(schedules));
-  
+      localStorage.setItem("generatedSchedules", JSON.stringify(schedules));
+
       setSearchResults([]);
-      setSearchQuery('');
+      setSearchQuery("");
     } catch (error) {
-      console.error('Error adding course:', error);
+      console.error("Error adding course:", error);
     }
   };
 
   const handleRemoveCourse = (courseId: string) => {
     if (!schedule) return;
-    
+
     const newSchedule = {
       ...schedule,
-      courses: schedule.courses.filter(c => c.course_id !== courseId),
-      sections: schedule.sections.filter(s => s.course !== courseId)
+      courses: schedule.courses.filter((c) => c.course_id !== courseId),
+      sections: schedule.sections.filter((s) => s.course !== courseId),
     };
-    
+
     setSchedule(newSchedule);
     // Update localStorage
-    const schedules = JSON.parse(localStorage.getItem('generatedSchedules') || '[]');
+    const schedules = JSON.parse(localStorage.getItem("generatedSchedules") || "[]");
     schedules[parseInt(params.id)] = newSchedule;
-    localStorage.setItem('generatedSchedules', JSON.stringify(schedules));
+    localStorage.setItem("generatedSchedules", JSON.stringify(schedules));
   };
 
   const handleCourseSelect = async (course: SearchResult) => {
@@ -142,13 +168,13 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
       setSections(sectionsData);
       setSelectedCourse(course);
     } catch (error) {
-      console.error('Error fetching sections:', error);
+      console.error("Error fetching sections:", error);
     }
   };
 
   const handleAddSection = async (section: any) => {
     if (!schedule || !selectedCourse) return;
-  
+
     // Transform the section data to match our Section type
     const newSection = {
       course: selectedCourse.course_id,
@@ -158,56 +184,50 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
       waitlist: section.waitlist || "0",
       instructors: section.instructors || [],
       meetings: section.meetings.map((meeting: any) => {
-        // Convert time format to match what WeeklySchedule expects
-        const formatTime = (time: string) => {
-          const [hours, minutes] = time.split(':');
-          const hour = parseInt(hours);
-          const period = hour >= 12 ? 'PM' : 'AM';
-          const formattedHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-          return `${formattedHour}:${minutes}${period}`;
-        };
-  
         return {
           days: meeting.days,
           start_time: formatTime(meeting.start_time),
           end_time: formatTime(meeting.end_time),
           building: meeting.building || "",
           room: meeting.room || "",
-          classtype: meeting.classtype || ""
+          classtype: meeting.classtype || "",
         };
-      })
+      }),
     };
-  
+
     // Log the section data to verify format
-    console.log('Adding section:', newSection);
-  
+    console.log("Adding section:", newSection);
+
     const newSchedule = {
       ...schedule,
-      courses: [...schedule.courses, { 
-        course_id: selectedCourse.course_id,
-        content: selectedCourse.content,
-        credits: selectedCourse.credits,
-        prerequisites: selectedCourse.prerequisites,
-        gpa: 0,
-        ranking: 0,
-        prerequisites_met: true
-      }],
+      courses: [
+        ...schedule.courses,
+        {
+          course_id: selectedCourse.course_id,
+          content: selectedCourse.content,
+          credits: selectedCourse.credits,
+          prerequisites: selectedCourse.prerequisites,
+          gpa: 0,
+          ranking: 0,
+          prerequisites_met: true,
+        },
+      ],
       sections: [...schedule.sections, newSection],
       totalScore: schedule.totalScore || 0,
-      totalCredits: (schedule.totalCredits || 0) + selectedCourse.credits
+      totalCredits: (schedule.totalCredits || 0) + selectedCourse.credits,
     };
-  
+
     // Update state and localStorage
     setSchedule(newSchedule);
-    const schedules = JSON.parse(localStorage.getItem('generatedSchedules') || '[]');
+    const schedules = JSON.parse(localStorage.getItem("generatedSchedules") || "[]");
     schedules[parseInt(params.id)] = newSchedule;
-    localStorage.setItem('generatedSchedules', JSON.stringify(schedules));
-  
+    localStorage.setItem("generatedSchedules", JSON.stringify(schedules));
+
     // Clear selection
     setSelectedCourse(null);
     setSections([]);
     setSearchResults([]);
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   if (!schedule) return <div>Loading...</div>;
@@ -228,8 +248,8 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
         <div className="lg:col-span-2">
           <Card>
             <CardContent className="p-6">
-              <WeeklySchedule 
-                sections={schedule.sections} 
+              <WeeklySchedule
+                sections={schedule.sections}
                 key={JSON.stringify(schedule.sections)} // Force re-render on section changes
               />
             </CardContent>
@@ -247,18 +267,18 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
                   placeholder="Enter department (e.g., CMSC)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 />
                 <Button onClick={handleSearch}>Search</Button>
               </div>
-              
+
               <div className="mt-4 space-y-2">
                 {selectedCourse ? (
                   <>
                     <div className="flex justify-between items-center mb-2">
                       <h3 className="font-medium">Sections for {selectedCourse.course_id}</h3>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => {
                           setSelectedCourse(null);
@@ -269,15 +289,13 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
                       </Button>
                     </div>
                     {sections.map((section) => (
-                      <div 
-                        key={section.section_id} 
+                      <div
+                        key={section.section_id}
                         className="p-2 border rounded hover:bg-muted cursor-pointer"
                         onClick={() => handleAddSection(section)}
                       >
                         <div className="font-medium">Section {section.section_id}</div>
-                        <div className="text-sm">
-                          {section.instructors.join(', ') || 'TBA'}
-                        </div>
+                        <div className="text-sm">{section.instructors.join(", ") || "TBA"}</div>
                         {section.meetings.map((meeting, idx) => (
                           <div key={idx} className="text-xs text-muted-foreground">
                             {meeting.days}: {meeting.start_time} - {meeting.end_time}
@@ -290,8 +308,8 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
                   </>
                 ) : (
                   searchResults.map((course) => (
-                    <div 
-                      key={course.course_id} 
+                    <div
+                      key={course.course_id}
                       className="p-2 border rounded hover:bg-muted cursor-pointer"
                       onClick={() => handleCourseSelect(course)}
                     >
@@ -313,11 +331,7 @@ export default function EditSchedulePage({ params }: { params: { id: string } })
                 {schedule.courses.map((course) => (
                   <div key={course.course_id} className="flex items-center justify-between p-2 border rounded">
                     <span>{course.course_id}</span>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleRemoveCourse(course.course_id)}
-                    >
+                    <Button variant="destructive" size="sm" onClick={() => handleRemoveCourse(course.course_id)}>
                       Remove
                     </Button>
                   </div>
