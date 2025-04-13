@@ -361,21 +361,6 @@ export default function CourseSearch() {
           <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">General Education Requirements</summary>
           <div className="p-4 border-t">
             <RequirementsSelector onRequirementsChange={setGenEdRequirements} />
-
-            {/* Gen-Ed Progress */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4">Progress</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(results.genEdProgress.remaining).map(([category, remaining]) => (
-                  <div key={category} className="bg-gray-50 p-3 rounded">
-                    <h4 className="font-medium">{category}</h4>
-                    <p className="text-sm">
-                      {results.genEdProgress.completed[category]} / {results.genEdProgress.completed[category] + remaining} completed
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </details>
       </div>
