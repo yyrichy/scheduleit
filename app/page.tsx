@@ -12,7 +12,8 @@ export default function Home() {
             Testudo Match 🐢
           </h1>
           <p className="text-xl text-red-600">
-            Find your perfect class schedule match at UMD
+            Find your perfect class schedule match at UMD.
+            We all know you aren't finding the other type of match anyways. 
           </p>
           <CourseSearch />
         </div>
