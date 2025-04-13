@@ -13,13 +13,13 @@ async function analyzeQuery(query: string): Promise<PreferenceAnalysis> {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    const prompt = `Analyze this course search query: "${query}"
+    const prompt = `Analyze this course search query from a CS major: "${query}"
 Consider CS major requirements at University of Maryland, College Park.
 Return a JSON object with:
 {
   "difficultyScore": number 0-1 (0=easiest),
   "levelPreference": "1xx"/"2xx"/"3xx"/"4xx"/null,
-  "reasoning": "explanation"
+  "reasoning": "short 2 sentence explanation of difficulty preference"
 }`;
 
     const result = await model.generateContent(prompt);

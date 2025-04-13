@@ -100,27 +100,27 @@ export default function SchedulesPage() {
                         return (
                           <details key={course.course_id} className="border-t pt-4">
                             <summary className="font-medium text-lg flex items-center justify-between cursor-pointer hover:opacity-80">
-                              <span>
-                                {course.course_id}
-                              </span>
+                              <span>{course.course_id}</span>
                               <Badge variant="outline">Section {section.section_id}</Badge>
                             </summary>
                             <div className="mt-4">
                               <p className="text-muted-foreground">{course.content}</p>
                               <div className="mt-2 text-sm">
-                                <p className="font-medium">
-                                  Instructors: {section.instructors.join(', ') || 'TBA'}
-                                </p>
+                                <p className="font-medium">Instructors: {section.instructors.join(", ") || "TBA"}</p>
                                 <div className="mt-1">
                                   <p className="font-medium">Meetings:</p>
                                   {section.meetings.map((meeting, idx) => (
                                     <p key={idx} className="ml-4">
-                                      <span className="font-medium">{meeting.days}:</span>{' '}
-                                      {meeting.start_time} - {meeting.end_time}
-                                      <span className="text-muted-foreground ml-2">
-                                        ({meeting.building} {meeting.room})
-                                        {meeting.classtype && ` - ${meeting.classtype}`}
-                                      </span>
+                                      {meeting.days ? (
+                                        <>
+                                          <span className="font-medium">{meeting.days}:</span> {meeting.start_time} - {meeting.end_time}
+                                          <span className="text-muted-foreground ml-2">
+                                            ({meeting.building} {meeting.room}){meeting.classtype && ` - ${meeting.classtype}`}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <span className="font-medium">Online</span>
+                                      )}
                                     </p>
                                   ))}
                                 </div>

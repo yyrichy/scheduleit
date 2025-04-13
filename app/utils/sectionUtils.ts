@@ -1,5 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
 import { Section, Professor, ScoredSection } from "../types/section";
 import { SearchResult } from "./courseQuery";
 
@@ -35,25 +33,33 @@ export async function fetchProfessorRating(name: string): Promise<number> {
     return professorRatingCache[name];
   }
 
+  if (!name || name.trim() === "") return 4.0;
+
   try {
     const response = await fetch(`https://planetterp.com/api/v1/professor?name=${encodeURIComponent(name)}`);
+    if (!response.ok) {
+      // Cache the default rating to prevent repeated failed requests
+      professorRatingCache[name] = 4.0;
+      return 4.0;
+    }
     const professor: Professor = await response.json();
-    const rating = professor.average_rating || 4.5;
-
-    // Store in cache
+    const rating = professor.average_rating || 4.0;
     professorRatingCache[name] = rating;
     return rating;
   } catch (error) {
     console.error(`Error fetching professor rating for ${name}:`, error);
-    // Cache the failed attempt to prevent repeated failed requests
-    professorRatingCache[name] = 0;
-    return 0;
+    // Cache the default rating to prevent repeated failed requests
+    professorRatingCache[name] = 4.0;
+    return 4.0;
   }
 }
 
 export async function getScoredSections(course: SearchResult): Promise<ScoredSection[]> {
   const sections = await fetchSections(course.course_id);
   const scoredSections: ScoredSection[] = [];
+
+  // Skip scoring if no sections available
+  if (sections.length === 0) return [];
 
   for (const section of sections) {
     let avgProfessorRating = 0;
@@ -68,7 +74,7 @@ export async function getScoredSections(course: SearchResult): Promise<ScoredSec
       }
     }
 
-    const professorRating = ratingCount > 0 ? avgProfessorRating / ratingCount : 0;
+    const professorRating = ratingCount > 0 ? avgProfessorRating / ratingCount : 4.0;
     const sectionScore = calculateSectionScore(professorRating, course.preferenceScore || 0);
 
     scoredSections.push({
