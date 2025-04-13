@@ -76,16 +76,19 @@ export interface SearchResult {
 }
 
 export function transformDoc(doc: any, index: number): SearchResult {
+  // Extract GPA and clean content
   const gpaMatch = doc.pageContent.match(/Average GPA: ([\d.]+)/);
+  const content = gpaMatch ? doc.pageContent.split("Average GPA:")[0].trim() : doc.pageContent;
+
   return {
     course_id: doc.metadata.course_id,
-    content: doc.pageContent,
+    content: content,
     credits: doc.metadata.credits,
-    prerequisites: doc.metadata.prerequisites || "", // Ensure string
+    prerequisites: doc.metadata.prerequisites || "",
     gpa: gpaMatch ? parseFloat(gpaMatch[1]) : NaN,
     gen_ed: doc.metadata.gen_ed,
     ranking: index + 1,
-    prerequisites_met: true, // Default to true
+    prerequisites_met: true,
   };
 }
 
