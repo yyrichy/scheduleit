@@ -102,7 +102,6 @@ export default function CourseSearch() {
 
       const availableCourses = showOnlyAvailable ? allCourses.filter((course) => course.prerequisites_met) : allCourses;
 
-      // Pre-fetch all sections to improve performance
       const courseSectionsMap = new Map();
       await Promise.all(
         availableCourses.map(async (course) => {
@@ -117,14 +116,20 @@ export default function CourseSearch() {
         courses: SearchResult[],
         currentSchedule: SearchResult[],
         currentCredits: number,
-        startIndex: number
+        startIndex: number,
+        usedGenEds: Set<string> = new Set()
       ) => {
-        // Relaxed credit range check
-        if (currentCredits >= targetCredits - 3 && currentCredits <= targetCredits + 3) {
+        if (currentCredits >= targetCredits - 2 && currentCredits <= targetCredits + 2) {
           const sections = currentSchedule.map((course) => courseSectionsMap.get(course.course_id)[0]).filter(Boolean);
 
           if (sections.length === currentSchedule.length && !checkScheduleConflicts(sections)) {
-            const totalScore = sections.reduce((sum, section) => sum + section.sectionScore, 0) / sections.length;
+            // Calculate diversity score based on unique gen eds
+            const uniqueGenEds = new Set(currentSchedule.flatMap((course) => course.gen_ed || []));
+            const diversityScore = uniqueGenEds.size / (currentSchedule.length || 1);
+
+            const totalScore =
+              (sections.reduce((sum, section) => sum + section.sectionScore, 0) / sections.length) * 0.8 + diversityScore * 0.2;
+
             schedules.push({
               courses: currentSchedule,
               sections,
@@ -134,17 +139,23 @@ export default function CourseSearch() {
           }
         }
 
-        // Continue even if we found some schedules
         for (let i = startIndex; i < courses.length; i++) {
           const course = courses[i];
           const newCredits = currentCredits + (Number(course.credits) || 0);
-          // Relaxed upper bound check
-          if (newCredits <= targetCredits + 3) {
-            await generateCombinations(courses, [...currentSchedule, course], newCredits, i + 1);
+
+          // Skip if this course's gen eds are already used in this schedule
+          if (course.gen_ed && course.gen_ed.some((ge) => usedGenEds.has(ge))) continue;
+
+          if (newCredits <= targetCredits + 2) {
+            const newUsedGenEds = new Set(usedGenEds);
+            if (course.gen_ed) {
+              course.gen_ed.forEach((ge) => newUsedGenEds.add(ge));
+            }
+            await generateCombinations(courses, [...currentSchedule, course], newCredits, i + 1, newUsedGenEds);
           }
         }
 
-        // Sort and limit schedules periodically
+        // Periodically sort and limit schedules
         if (schedules.length > 10) {
           schedules.sort((a, b) => b.totalScore - a.totalScore);
           schedules.length = 5;
