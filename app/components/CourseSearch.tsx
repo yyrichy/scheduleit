@@ -6,6 +6,9 @@ import RequirementsSelector from "./RequirementsSelector";
 import { GenEdRequirements } from "../types/schedule";
 import { SearchResult } from "../utils/courseQuery";
 import { CourseTagsInput } from "./CourseTagsInput";
+import { checkScheduleConflicts, getScoredSections } from "../utils/sectionUtils";
+import { ScoredSection } from "../types/section";
+import { WeeklySchedule } from "./WeeklySchedule";
 
 interface SearchResults {
   csCourses: SearchResult[];
@@ -19,7 +22,7 @@ interface SearchResults {
 export default function CourseSearch() {
   const [query, setQuery] = useState("");
   const [completedCourses, setCompletedCourses] = useState<string[]>([]);
-  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);  // Add this line
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false); // Add this line
   const [results, setResults] = useState<SearchResults>({
     csCourses: [],
     genEdCourses: {},
@@ -124,68 +127,192 @@ export default function CourseSearch() {
     }
   };
 
-  console.log("results ", results);
-
   // Add this function to filter courses
   const filterAvailableCourses = (courses: SearchResult[]) => {
     if (!showOnlyAvailable) return courses;
-    return courses.filter(course => course.prerequisites_met);
+    return courses.filter((course) => course.prerequisites_met);
   };
 
   // Add these new state variables with the existing ones
   const [creditRange, setCreditRange] = useState([12, 15]); // Default range
-  const [generatedSchedules, setGeneratedSchedules] = useState<Array<SearchResult[]>>([]);
+
+  // Update the Schedule interface to match SearchResult type
+  interface Schedule {
+    courses: {
+      course_id: string;
+      content: string;
+      credits: number;
+      prerequisites: string;
+      gpa: number;
+      gen_ed?: string[];
+      ranking: number;
+      prerequisites_met: boolean;
+      preferenceScore?: number;
+    }[];
+    sections: ScoredSection[];
+    totalScore: number;
+    totalCredits: number;
+  }
+
+  // Update the state declaration
+  const [generatedSchedules, setGeneratedSchedules] = useState<Schedule[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Add this function to generate schedules
   // Replace the creditRange state with a single targetCredits state
-  const [targetCredits, setTargetCredits] = useState(15); // Default 15 credits
-  
+  const [targetCredits, setTargetCredits] = useState(8); // Default 15 credits
+
   // Modify the generateSchedules function
-  const generateSchedules = () => {
-    const allCourses = [...results.csCourses];
-    Object.values(results.genEdCourses).forEach(courses => {
-      allCourses.push(...courses);
-    });
-  
-    const availableCourses = showOnlyAvailable 
-      ? allCourses.filter(course => course.prerequisites_met)
-      : allCourses;
-  
-    const schedules: Array<SearchResult[]> = [];
-    const generateCombinations = (
-      courses: SearchResult[],
-      currentSchedule: SearchResult[],
-      currentCredits: number,
-      startIndex: number
-    ) => {
-      // Allow ±1 credit from target
-      if (currentCredits >= targetCredits - 1 && currentCredits <= targetCredits + 1) {
-        schedules.push([...currentSchedule]);
-      }
-  
-      for (let i = startIndex; i < courses.length; i++) {
-        const course = courses[i];
-        const newCredits = currentCredits + (Number(course.credits) || 0);
-        
-        if (newCredits <= targetCredits + 1) {
-          generateCombinations(
-            courses,
-            [...currentSchedule, course],
-            newCredits,
-            i + 1
-          );
+  const generateSchedules = async () => {
+    console.log("Generating schedules..."); // Add this log statement to check if the function is cal
+    setIsGenerating(true);
+    setError("");
+    try {
+      const allCourses = [...results.csCourses];
+      Object.values(results.genEdCourses).forEach((courses) => {
+        allCourses.push(...courses);
+      });
+
+      const availableCourses = showOnlyAvailable ? allCourses.filter((course) => course.prerequisites_met) : allCourses;
+
+      const schedules: Schedule[] = [];
+
+      // In the generateSchedules function
+      const generateCombinations = async (
+        courses: SearchResult[],
+        currentSchedule: SearchResult[],
+        currentCredits: number,
+        startIndex: number
+      ) => {
+        // More flexible credit check (within 3 credits of target)
+        if (currentCredits >= targetCredits - 3 && currentCredits <= targetCredits + 3) {
+          try {
+            console.log(
+              "Found potential schedule:",
+              currentSchedule.map((c) => c.course_id)
+            );
+            const sectionPromises = currentSchedule.map((course) => getScoredSections(course));
+            const courseSections = await Promise.all(sectionPromises);
+
+            if (courseSections.every((sections) => sections.length > 0)) {
+              const bestSections = courseSections.map((sections) => sections[0]);
+
+              // Log section availability
+              console.log(
+                "Sections found:",
+                bestSections.map((s) => s.section_id)
+              );
+
+              if (!checkScheduleConflicts(bestSections)) {
+                console.log("Valid schedule found!");
+                const totalScore = bestSections.reduce((sum, section) => sum + section.sectionScore, 0) / bestSections.length;
+                schedules.push({
+                  courses: currentSchedule,
+                  sections: bestSections,
+                  totalScore,
+                  totalCredits: currentCredits,
+                });
+              } else {
+                console.log("Schedule had time conflicts");
+              }
+            } else {
+              console.log("Some courses had no available sections");
+            }
+          } catch (error) {
+            console.error("Error processing schedule:", error);
+          }
         }
-      }
-    };
-  
-    generateCombinations(availableCourses, [], 0, 0);
-    setGeneratedSchedules(schedules.slice(0, 10));
+
+        // Continue searching if we haven't found enough schedules
+        if (schedules.length < 5) {
+          for (let i = startIndex; i < courses.length; i++) {
+            const course = courses[i];
+            const newCredits = currentCredits + (Number(course.credits) || 0);
+
+            // More flexible upper credit limit
+            if (newCredits <= targetCredits + 3) {
+              await generateCombinations(courses, [...currentSchedule, course], newCredits, i + 1);
+            }
+          }
+        }
+      };
+
+      // Add logging before starting combination generation
+      console.log(
+        "Starting schedule generation with courses:",
+        availableCourses.map((c) => ({
+          id: c.course_id,
+          credits: c.credits,
+        }))
+      );
+      await generateCombinations(availableCourses, [], 0, 0);
+
+      // Sort schedules by total score and take top 5
+      const sortedSchedules = schedules.sort((a, b) => b.totalScore - a.totalScore).slice(0, 5);
+      console.log("Generated schedules:", sortedSchedules);
+      setGeneratedSchedules(sortedSchedules);
+    } catch (error) {
+      setError("Failed to generate schedules: " + (error as Error).message);
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  // Update the schedule display section
+  {
+    generatedSchedules.length > 0 && (
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold mb-4">Possible Schedules</h3>
+        <div className="space-y-8">
+          {generatedSchedules.map((schedule, index) => (
+            <div key={index} className="p-4 border rounded-lg">
+              <h4 className="font-medium mb-4">
+                Schedule {index + 1} - {schedule.totalCredits} credits (Score: {(schedule.totalScore * 100).toFixed(1)}%)
+              </h4>
+              <WeeklySchedule sections={schedule.sections} />
+              <div className="mt-4 space-y-2">
+                {schedule.courses.map((course, courseIndex) => {
+                  const section = schedule.sections[courseIndex];
+                  return (
+                    <div key={course.course_id} className="text-sm">
+                      <div className="font-medium">
+                        {course.course_id} - Section {section.section_id}
+                      </div>
+                      <div className="text-gray-600 ml-4">
+                        <div>Instructors: {section.instructors.join(", ") || "TBA"}</div>
+                        <div>Meetings:</div>
+                        {section.meetings.map((meeting, idx) => (
+                          <div key={idx} className="ml-4">
+                            {meeting.days}: {meeting.start_time} - {meeting.end_time}
+                            <span className="text-gray-500 ml-2">
+                              ({meeting.building} {meeting.room}){meeting.classtype && ` - ${meeting.classtype}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Update the generate button to show loading state
+  <button
+    onClick={generateSchedules}
+    disabled={isGenerating}
+    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400"
+  >
+    {isGenerating ? "Generating..." : "Generate Schedules"}
+  </button>;
 
   // Replace the credit range UI with a single slider
   return (
     <div className="max-w-4xl mx-auto p-4">
-
       {/* Search Section */}
       <div className="mb-12">
         <input
@@ -210,9 +337,7 @@ export default function CourseSearch() {
       <div className="space-y-4 mb-8">
         {/* Completed Courses Section */}
         <details className="bg-white rounded-lg shadow-sm">
-          <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">
-            Completed Courses
-          </summary>
+          <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">Completed Courses</summary>
           <div className="p-4 border-t">
             <p className="text-sm text-gray-600 mb-4">Enter the courses you've already completed (e.g., CMSC131, MATH140):</p>
             <CourseTagsInput value={completedCourses} onChange={setCompletedCourses} />
@@ -233,12 +358,10 @@ export default function CourseSearch() {
 
         {/* Gen-Ed Requirements Section */}
         <details className="bg-white rounded-lg shadow-sm">
-          <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">
-            General Education Requirements
-          </summary>
+          <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">General Education Requirements</summary>
           <div className="p-4 border-t">
             <RequirementsSelector onRequirementsChange={setGenEdRequirements} />
-            
+
             {/* Gen-Ed Progress */}
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-4">Progress</h3>
@@ -286,15 +409,13 @@ export default function CourseSearch() {
           </div>
         </div>
       </div>
-      
+
       {/* Add this after the search button */}
       <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
         <h2 className="text-xl font-bold mb-4">Schedule Generator</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Target Credits: {targetCredits}
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Target Credits: {targetCredits}</label>
             <input
               type="range"
               min="12"
@@ -304,10 +425,7 @@ export default function CourseSearch() {
               className="w-full"
             />
           </div>
-          <button
-            onClick={generateSchedules}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-          >
+          <button onClick={generateSchedules} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
             Generate Schedules
           </button>
         </div>
@@ -320,16 +438,34 @@ export default function CourseSearch() {
               {generatedSchedules.map((schedule, index) => (
                 <div key={index} className="p-4 border rounded-lg">
                   <h4 className="font-medium mb-2">
-                    Schedule {index + 1} - {schedule.reduce((sum, course) => sum + (Number(course.credits) || 0), 0)} credits
+                    Schedule {index + 1} - {schedule.courses.reduce((sum, course) => sum + (Number(course.credits) || 0), 0)} credits
                   </h4>
                   <div className="grid gap-2">
-                    {schedule.map((course) => (
-                      <div key={course.course_id} className="flex justify-between items-center">
-                        <span>{course.course_id}</span>
-                        <span>{course.credits} credits</span>
-                      </div>
-                    ))}
+                    {schedule.courses.map((course, courseIndex) => {
+                      const section = schedule.sections[courseIndex];
+                      return (
+                        <div key={course.course_id} className="border-b pb-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">
+                              {course.course_id} (Section {section.number})
+                            </span>
+                            <span>{course.credits} credits</span>
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {section.meetings.map((meeting, idx) => (
+                              <div key={idx}>
+                                {meeting.days} {meeting.start_time}-{meeting.end_time}
+                                <span className="text-gray-500">
+                                  ({meeting.building} {meeting.room}){meeting.classtype && ` - ${meeting.classtype}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+                  <WeeklySchedule sections={schedule.sections} />
                 </div>
               ))}
             </div>

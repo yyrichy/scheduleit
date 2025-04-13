@@ -89,11 +89,7 @@ export function transformDoc(doc: any, index: number): SearchResult {
   };
 }
 
-export async function queryCourses(
-  query: string,
-  completedCourses: string[],
-  csLimit: number = 5,
-): Promise<{ csCourses: SearchResult[] }> {
+export async function queryCourses(query: string, completedCourses: string[], csLimit: number = 15): Promise<{ csCourses: SearchResult[] }> {
   // Analyze the query first
   const analysis = await analyzeQuery(query);
   const { csStore } = await loadVectorStores();

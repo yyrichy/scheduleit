@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     const documents = storeData.documents.map((doc: any) => new Document(doc));
     const vectorStore = await MemoryVectorStore.fromDocuments(documents, embeddings);
 
-    const results = await vectorStore.similaritySearch(query, 5);
+    const results = await vectorStore.similaritySearch(query, 20);
     return NextResponse.json(results.map(transformDoc));
   } catch (error: any) {
     console.error("❌ API Error:", error);

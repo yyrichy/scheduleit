@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "train": "dotenv -e .env.local tsx scripts/train.ts",
-    "test-query": "dotenv -e .env.local tsx scripts/testQuery.ts"
+    "test-query": "dotenv -e .env.local tsx scripts/testQuery.ts",
+    "scrape-sections": "dotenv -e .env.local tsx scripts/scrapeSections.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
