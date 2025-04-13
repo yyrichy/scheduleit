@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { WeeklySchedule } from '../components/WeeklySchedule';
-import { Schedule } from '../types/schedule';
+import { Schedule } from "@/types/schedule";
 
 export default function SchedulesPage() {
   const searchParams = useSearchParams();

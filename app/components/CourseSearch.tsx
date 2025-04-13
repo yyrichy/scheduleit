@@ -4,38 +4,12 @@ import React from "react";
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
 import RequirementsSelector from "./RequirementsSelector";
-import { GenEdRequirements } from "../types/schedule";
+import { GenEdRequirements, Schedule, SearchResults } from "../types/schedule";
 import { SearchResult } from "../utils/courseQuery";
 import { CourseTagsInput } from "./CourseTagsInput";
 import { checkScheduleConflicts, getScoredSections } from "../utils/sectionUtils";
 import { ScoredSection } from "../types/section";
 import { WeeklySchedule } from "./WeeklySchedule";
-
-interface SearchResults {
-  csCourses: SearchResult[];
-  genEdCourses: Record<string, SearchResult[]>;
-  genEdProgress: {
-    completed: GenEdRequirements;
-    remaining: GenEdRequirements;
-  };
-}
-
-interface Schedule {
-  courses: {
-    course_id: string;
-    content: string;
-    credits: number;
-    prerequisites: string;
-    gpa: number;
-    gen_ed?: string[];
-    ranking: number;
-    prerequisites_met: boolean;
-    preferenceScore?: number;
-  }[];
-  sections: ScoredSection[];
-  totalScore: number;
-  totalCredits: number;
-}
 
 export default function CourseSearch() {
   const router = useRouter();
