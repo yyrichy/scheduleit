@@ -12,71 +12,23 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
 
   const getBlockColor = (courseId: string) => {
     const prefix = courseId.split(/[0-9]/)[0];
-    switch (prefix) {
-      // Cultural and Ethnic Studies
-      case 'AAAS': return 'bg-rose-200';
-      case 'AAST': return 'bg-pink-200';
-      case 'AMST': return 'bg-purple-200';
-      case 'USLT': return 'bg-fuchsia-200';
-      case 'WGSS': return 'bg-violet-200';
-
-      // Sciences
-      case 'BCHM': return 'bg-blue-200';
-      case 'BIOE': return 'bg-cyan-200';
-      case 'BIOL': return 'bg-teal-200';
-      case 'BSCI': return 'bg-emerald-200';
-      case 'CHEM': return 'bg-green-200';
-      case 'CMSC': return 'bg-sky-200';
-      case 'PHYS': return 'bg-indigo-200';
-
-      // Business and Economics
-      case 'BMGT': return 'bg-amber-200';
-      case 'BUSI': return 'bg-yellow-200';
-      case 'ECON': return 'bg-orange-200';
-      case 'BUAC': return 'bg-lime-200';
-      case 'BUFN': return 'bg-green-200';
-
-      // Social Sciences
-      case 'ANTH': return 'bg-red-200';
-      case 'BSOS': return 'bg-orange-200';
-      case 'CCJS': return 'bg-amber-200';
-      case 'GVPT': return 'bg-yellow-200';
-      case 'PSYC': return 'bg-lime-200';
-      case 'SOCY': return 'bg-emerald-200';
-
-      // Engineering
-      case 'ENAE': return 'bg-blue-200';
-      case 'ENCE': return 'bg-sky-200';
-      case 'ENEE': return 'bg-cyan-200';
-      case 'ENES': return 'bg-teal-200';
-      case 'ENME': return 'bg-emerald-200';
-
-      // Arts and Humanities
-      case 'ARTH': return 'bg-purple-200';
-      case 'ARTT': return 'bg-fuchsia-200';
-      case 'ENGL': return 'bg-violet-200';
-      case 'HIST': return 'bg-indigo-200';
-      case 'MUSC': return 'bg-slate-200';
-
-      // Languages
-      case 'CHIN': return 'bg-red-200';
-      case 'FREN': return 'bg-blue-200';
-      case 'GERM': return 'bg-yellow-200';
-      case 'JAPN': return 'bg-pink-200';
-      case 'SPAN': return 'bg-orange-200';
-
-      // Other Common Departments
-      case 'MATH': return 'bg-violet-200';
-      case 'STAT': return 'bg-purple-200';
-      case 'COMM': return 'bg-rose-200';
-      case 'EDUC': return 'bg-sky-200';
-      case 'KNES': return 'bg-emerald-200';
-      case 'PHIL': return 'bg-slate-200';
-      case 'PLCY': return 'bg-zinc-200';
-
-      // Default for other departments
-      default: return 'bg-gray-200';
+    
+    // Generate a consistent "random" color based on the prefix
+    let hash = 0;
+    for (let i = 0; i < prefix.length; i++) {
+      hash = prefix.charCodeAt(i) + ((hash << 5) - hash);
     }
+    
+    // Use modulo to select from available Tailwind colors
+    const colors = [
+      'bg-red-200', 'bg-pink-200', 'bg-purple-200', 'bg-indigo-200', 
+      'bg-blue-200', 'bg-cyan-200', 'bg-teal-200', 'bg-emerald-200',
+      'bg-green-200', 'bg-lime-200', 'bg-yellow-200', 'bg-amber-200',
+      'bg-orange-200', 'bg-rose-200', 'bg-fuchsia-200', 'bg-violet-200',
+      'bg-sky-200', 'bg-slate-200', 'bg-zinc-200'
+    ];
+    
+    return colors[Math.abs(hash) % colors.length];
   };
 
   const parseTime = (timeStr: string) => {
