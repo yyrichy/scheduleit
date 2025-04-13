@@ -8,6 +8,7 @@ import { Heart, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -177,7 +178,7 @@ function CarouselPrevious({
   size = "icon",
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { orientation, scrollPrev, canScrollPrev } = useCarousel()
+  const { orientation, scrollNext, canScrollNext } = useCarousel()
 
   return (
     <Button
@@ -191,12 +192,12 @@ function CarouselPrevious({
           : "-top-40 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
-      disabled={!canScrollPrev}
-      onClick={scrollPrev}
+      disabled={!canScrollNext}
+      onClick={scrollNext}
       {...props}
     >
       <X className="h-24 w-24" />
-      <span className="sr-only">Previous slide</span>
+      <span className="sr-only">Skip schedule</span>
     </Button>
   )
 }
@@ -207,7 +208,8 @@ function CarouselNext({
   size = "icon",
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { orientation, scrollNext, canScrollNext } = useCarousel()
+  const { orientation } = useCarousel()
+  const router = useRouter()
 
   return (
     <Button
@@ -221,12 +223,14 @@ function CarouselNext({
           : "-bottom-40 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
-      disabled={!canScrollNext}
-      onClick={scrollNext}
+      onClick={() => {
+        const currentIndex = document.querySelectorAll('[data-slot="carousel-item"]').length - 1;
+        router.push(`/schedules/edit/${currentIndex}`);
+      }}
       {...props}
     >
       <Heart className="h-24 w-24" />
-      <span className="sr-only">Next slide</span>
+      <span className="sr-only">Edit schedule</span>
     </Button>
   )
 }
