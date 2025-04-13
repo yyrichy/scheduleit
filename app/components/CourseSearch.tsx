@@ -90,70 +90,72 @@ export default function CourseSearch() {
     try {
       const allCourses = [
         ...results.csCourses,
-        ...Object.values(results.genEdCourses).flat().map(course => ({
-          ...course,
-          gen_ed: Array.isArray(course.gen_ed) ? course.gen_ed : [course.gen_ed],
-          credits: typeof course.credits === 'string' ? parseInt(course.credits) : course.credits
-        }))
+        ...Object.values(results.genEdCourses)
+          .flat()
+          .map((course) => ({
+            ...course,
+            gen_ed: Array.isArray(course.gen_ed) ? course.gen_ed : [course.gen_ed],
+            credits: typeof course.credits === "string" ? parseInt(course.credits) : course.credits,
+          })),
       ];
 
-      const availableCourses = showOnlyAvailable 
-        ? allCourses.filter(course => course.prerequisites_met)
-        : allCourses;
+      const availableCourses = showOnlyAvailable ? allCourses.filter((course) => course.prerequisites_met) : allCourses;
+
+      // Pre-fetch all sections to improve performance
+      const courseSectionsMap = new Map();
+      await Promise.all(
+        availableCourses.map(async (course) => {
+          const sections = await getScoredSections(course);
+          courseSectionsMap.set(course.course_id, sections);
+        })
+      );
 
       const schedules: Schedule[] = [];
-      
+
       const generateCombinations = async (
         courses: SearchResult[],
         currentSchedule: SearchResult[],
         currentCredits: number,
         startIndex: number
       ) => {
+        // Relaxed credit range check
         if (currentCredits >= targetCredits - 3 && currentCredits <= targetCredits + 3) {
-          try {
-            const sectionPromises = currentSchedule.map(course => getScoredSections(course));
-            const courseSections = await Promise.all(sectionPromises);
+          const sections = currentSchedule.map((course) => courseSectionsMap.get(course.course_id)[0]).filter(Boolean);
 
-            if (courseSections.every(sections => sections.length > 0)) {
-              const bestSections = courseSections.map(sections => sections[0]);
-
-              if (!checkScheduleConflicts(bestSections)) {
-                const totalScore = bestSections.reduce((sum, section) => 
-                  sum + section.sectionScore, 0) / bestSections.length;
-                schedules.push({
-                  courses: currentSchedule,
-                  sections: bestSections,
-                  totalScore,
-                  totalCredits: currentCredits,
-                });
-              }
-            }
-          } catch (error) {
-            console.error("Error processing schedule:", error);
+          if (sections.length === currentSchedule.length && !checkScheduleConflicts(sections)) {
+            const totalScore = sections.reduce((sum, section) => sum + section.sectionScore, 0) / sections.length;
+            schedules.push({
+              courses: currentSchedule,
+              sections,
+              totalScore,
+              totalCredits: currentCredits,
+            });
           }
         }
 
-        // Continue generating combinations if we haven't found enough schedules
-        if (schedules.length < 5) {
-          for (let i = startIndex; i < courses.length && schedules.length < 5; i++) {
-            const course = courses[i];
-            const newCredits = currentCredits + (Number(course.credits) || 0);
-            if (newCredits <= targetCredits + 3) {
-              await generateCombinations(courses, [...currentSchedule, course], newCredits, i + 1);
-            }
+        // Continue even if we found some schedules
+        for (let i = startIndex; i < courses.length; i++) {
+          const course = courses[i];
+          const newCredits = currentCredits + (Number(course.credits) || 0);
+          // Relaxed upper bound check
+          if (newCredits <= targetCredits + 3) {
+            await generateCombinations(courses, [...currentSchedule, course], newCredits, i + 1);
           }
+        }
+
+        // Sort and limit schedules periodically
+        if (schedules.length > 10) {
+          schedules.sort((a, b) => b.totalScore - a.totalScore);
+          schedules.length = 5;
         }
       };
 
       await generateCombinations(availableCourses, [], 0, 0);
-      const sortedSchedules = schedules
-        .sort((a, b) => b.totalScore - a.totalScore)
-        .slice(0, 5);
 
-      // Store schedules in localStorage instead of URL
-      localStorage.setItem('generatedSchedules', JSON.stringify(sortedSchedules));
-      router.push('/schedules');
-      
+      const sortedSchedules = schedules.sort((a, b) => b.totalScore - a.totalScore).slice(0, 5);
+
+      localStorage.setItem("generatedSchedules", JSON.stringify(sortedSchedules));
+      router.push("/schedules");
     } catch (error) {
       setError("Failed to generate schedules: " + (error as Error).message);
     } finally {

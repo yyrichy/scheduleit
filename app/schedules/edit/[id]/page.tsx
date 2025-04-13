@@ -8,6 +8,7 @@ import { SearchResult } from "../../../utils/courseQuery";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Section } from "@/types/section";
 
 export default function EditSchedulePage({ params }: { params: { id: string } }) {
   const router = useRouter();
