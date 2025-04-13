@@ -132,62 +132,81 @@ export default function CourseSearch() {
     return courses.filter(course => course.prerequisites_met);
   };
 
-  // Modify the return statement where you render CS courses
   return (
     <div className="max-w-4xl mx-auto p-4">
-      <RequirementsSelector onRequirementsChange={setGenEdRequirements} />
 
-      <div className="mb-8">
-        <div className="flex flex-col gap-4">
-          <CourseTagsInput value={completedCourses} onChange={setCompletedCourses} />
-          
-          {/* Add this checkbox */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="showAvailable"
-              checked={showOnlyAvailable}
-              onChange={(e) => setShowOnlyAvailable(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <label htmlFor="showAvailable" className="text-sm text-gray-700">
-              Show only available CMSC courses based on prerequisites
-            </label>
-          </div>
-
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && searchCourses()}
-            placeholder="Try: 'Show me easy programming classes' or 'I want challenging 400-level courses'"
-            className="p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={searchCourses}
-            disabled={loading}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 shadow-sm"
-          >
-            {loading ? "Searching..." : "Search"}
-          </button>
-        </div>
+      {/* Search Section */}
+      <div className="mb-12">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && searchCourses()}
+          placeholder="Try: 'Show me easy programming classes' or 'I want challenging 400-level courses'"
+          className="w-full p-4 text-lg border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 mb-4"
+        />
+        <button
+          onClick={searchCourses}
+          disabled={loading}
+          className="w-full px-6 py-4 bg-blue-500 text-white text-lg rounded-lg hover:bg-blue-600 disabled:bg-gray-400 shadow-sm"
+        >
+          {loading ? "Searching..." : "Search"}
+        </button>
         {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-xl font-bold mb-4">Gen-Ed Progress</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Object.entries(results.genEdProgress.remaining).map(([category, remaining]) => (
-            <div key={category} className="bg-white p-4 rounded-lg shadow-sm">
-              <h3 className="font-semibold">{category}</h3>
-              <p className="text-sm">
-                {results.genEdProgress.completed[category]} / {results.genEdProgress.completed[category] + remaining} completed
-              </p>
+      {/* Collapsible Sections */}
+      <div className="space-y-4 mb-8">
+        {/* Completed Courses Section */}
+        <details className="bg-white rounded-lg shadow-sm">
+          <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">
+            Completed Courses
+          </summary>
+          <div className="p-4 border-t">
+            <p className="text-sm text-gray-600 mb-4">Enter the courses you've already completed (e.g., CMSC131, MATH140):</p>
+            <CourseTagsInput value={completedCourses} onChange={setCompletedCourses} />
+            <div className="mt-4 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="showAvailable"
+                checked={showOnlyAvailable}
+                onChange={(e) => setShowOnlyAvailable(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <label htmlFor="showAvailable" className="text-sm text-gray-700">
+                Show only available CMSC courses based on prerequisites
+              </label>
             </div>
-          ))}
-        </div>
+          </div>
+        </details>
+
+        {/* Gen-Ed Requirements Section */}
+        <details className="bg-white rounded-lg shadow-sm">
+          <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">
+            General Education Requirements
+          </summary>
+          <div className="p-4 border-t">
+            <RequirementsSelector onRequirementsChange={setGenEdRequirements} />
+            
+            {/* Gen-Ed Progress */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Progress</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Object.entries(results.genEdProgress.remaining).map(([category, remaining]) => (
+                  <div key={category} className="bg-gray-50 p-3 rounded">
+                    <h4 className="font-medium">{category}</h4>
+                    <p className="text-sm">
+                      {results.genEdProgress.completed[category]} / {results.genEdProgress.completed[category] + remaining} completed
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
 
+      {/* Results Sections */}
       <div className="space-y-8">
         {/* Modified CS Courses Section */}
         <div>
