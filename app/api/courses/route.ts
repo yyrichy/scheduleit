@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     // Split query into topics
     const topics = query
       .toLowerCase()
-      .split(/and|,|\+/)
+      .split(/and|,|\+|or|also|plus/)
       .map((t: string) => t.trim())
       .filter((t: string) => t.length > 0);
 
