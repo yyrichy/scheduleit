@@ -2,6 +2,7 @@
 
 ### Find your perfect class schedule match at UMD. Swipe right on courses not people
 
+
 ## Table of Contents
 - [Inspiration](#inspiration)
 - [What It Does](#what-it-does)
