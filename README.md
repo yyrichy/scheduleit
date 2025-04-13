@@ -1,6 +1,6 @@
-# UMD Course Scheduler
+# TestudoMatch
 
-### Plan smarter. Schedule faster.
+### Find your perfect class schedule match at UMD. Swipe right on courses not people
 
 ## Table of Contents
 - [Inspiration](#inspiration)
@@ -16,35 +16,48 @@
 ---
 
 ## Inspiration
+We felt like finding the right courses to take as a UMD student was often confusing and frustrating. Reading through the major website, scrolling through the endless prerequisites and requirements. That's why we wanted a tool to help inspire and guide us students on finding the best, tailored schedule for them.
 
-As students at UMD, we were frustrated with how difficult it was to plan future semesters, especially with the advisor-to-student ratio. Whether it was finding courses that align with our interests, avoiding time conflicts, or syncing with friends, existing tools just didn’t cut it. So we built one.
+## What it does
+Testudo Match is a website where students can input their schedule wants using natural language (e.g. I want machine learning and database classes), find the most interesting "matches" 
 
----
-
-## What It Does
-
-UMD Course Scheduler helps students:
-- Find relevant courses using natural language queries (e.g., "programming courses with data structures")
-- Visualize time conflicts
-- Track planned and taken classes
-- Compare with friends' schedules *(coming soon!)*
-
----
-
-## How It Works
-
+## How we built it
 ### 🧠 Vector-Based Search
-
-1. **Data Collection**
-   - Course data from **UMD.io**
-   - Grade distributions and reviews from **PlanetTerp**
-
-2. **Embedding Generation**
-   - HuggingFace’s `sentence-transformers` converts course descriptions into high-dimensional vectors
-
-3. **Search with FAISS**
-   - Vectors are stored in a **FAISS** index for fast similarity search
+1. Data Collection
+   
+   - Course data from UMD.io
+   - Grade distributions and reviews from PlanetTerp
+2. Embedding Generation
+   
+   - HuggingFace’s sentence-transformers converts course descriptions into high-dimensional vectors
+3. Search with FAISS
+   
+   - Vectors are stored in a FAISS index for fast similarity search
    - A natural language query is also embedded and compared against stored vectors to find semantically relevant courses
+
+## Challenges we ran into
+- Creating an intuitive search from plain text queries
+- Designing the embedding and similarity system from scratch
+- Integrating multiple APIs with different formats
+- Building this while learning new frameworks
+
+## Accomplishments that we're proud of
+- Successfully implemented a vector database system to store and search through course information.
+- Developed a search function that returns relevant courses based on user queries.
+
+## What we learned
+- How to effectively use embeddings for semantic search.
+- The intricacies of integrating multiple APIs.
+- The importance of designing user-friendly interfaces.
+
+## What's next for Testudo Match 
+- Add UI components for:
+- Adding “taken” and “planned” courses
+- Time conflict detection
+- Friend schedule comparisons
+- Enhance the user experience by showing time conflicts and other info.
+- Implement features for comparing friend schedules.
+
 
 ---
 
@@ -67,44 +80,6 @@ UMD Course Scheduler helps students:
 - **HuggingFace Transformers** – semantic embeddings  
 - **UMD.io** & **PlanetTerp API** – real course and review data  
 - **Node.js** – backend logic  
-
----
-
-## Current Progress
-
-### ✅ Done / Mostly Working
-- Create a vector database system to store and search through course information
-- Implement a search function that returns relevant courses based on user queries
-
-### 🛠️ For Team: To Do/Issues
-- Add UI components for:
-  - Adding “taken” and “planned” courses
-  - Time conflict detection
-  - Friend schedule comparisons
- 
-- User adding already taken classes
-- User adding currently planned classes
-- UI showing time conflicts and other info
-- Friend schedules
-
----
-
-## Challenges
-
-- Creating an intuitive search from plain text queries  
-- Designing the embedding and similarity system from scratch  
-- Integrating multiple APIs with different formats  
-- Building this while learning new frameworks
-
----
-
-## What's Next
-
-We’re currently working on:
--
-
-We’d also love to implement:
--
 
 ---
 
