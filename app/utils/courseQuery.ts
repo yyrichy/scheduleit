@@ -72,6 +72,7 @@ export interface SearchResult {
   gen_ed?: string[];
   ranking: number;
   prerequisites_met: boolean;
+  preferenceScore?: number;
 }
 
 export function transformDoc(doc: any, index: number): SearchResult {
@@ -84,7 +85,7 @@ export function transformDoc(doc: any, index: number): SearchResult {
     gpa: gpaMatch ? parseFloat(gpaMatch[1]) : NaN,
     gen_ed: doc.metadata.gen_ed,
     ranking: index + 1,
-    prerequisites_met: true // Default to true
+    prerequisites_met: true, // Default to true
   };
 }
 
@@ -92,39 +93,60 @@ export async function queryCourses(
   query: string,
   completedCourses: string[],
   csLimit: number = 5,
-  genEdLimit: number = 5,
-  genEdRequirements?: Record<string, number>
-): Promise<{ csCourses: SearchResult[]; genEdCourses: Record<string, SearchResult[]> }> {
-  const { csStore, genEdStore } = await loadVectorStores();
+): Promise<{ csCourses: SearchResult[] }> {
+  // Analyze the query first
+  const analysis = await analyzeQuery(query);
+  const { csStore } = await loadVectorStores();
+
+  // Enhance query based on analysis
+  let enhancedQuery = query;
+  if (analysis.levelPreference) {
+    enhancedQuery += ` ${analysis.levelPreference}`;
+  }
 
   // Search CS courses
-  const csResults = await csStore.similaritySearch(query, csLimit);
+  const csResults = await csStore.similaritySearch(enhancedQuery, csLimit);
   const csCourses = csResults.map((result, index) => {
     const searchResult = transformDoc(result, index);
     // Only set prerequisites_met for CS courses
     if (prerequisiteMap[searchResult.course_id]) {
       searchResult.prerequisites_met = prerequisiteMap[searchResult.course_id](completedCourses);
     }
+
+    // Calculate preference score based on similarity and difficulty match
+    searchResult.preferenceScore = calculatePreferenceScore(searchResult, analysis.difficultyScore, index, csLimit);
+
     return searchResult;
   });
 
-  // Initialize an object to hold Gen Ed results by category
-  const genEdCourses: Record<string, SearchResult[]> = {};
-
-  // Perform similarity search for each Gen Ed category separately
-  if (genEdRequirements) {
-    for (const [category, count] of Object.entries(genEdRequirements)) {
-      if (count > 0) {
-        const categoryResults = await genEdStore.similaritySearch(`${query} ${category}`, genEdLimit);
-        genEdCourses[category] = categoryResults.map((result, index) => 
-          transformDoc(result, index)
-        );
-      }
+  // Sort results considering difficulty preference if GPA is available
+  csCourses.sort((a, b) => {
+    if (!isNaN(a.gpa) && !isNaN(b.gpa)) {
+      // If user wants easier courses (low difficultyScore), prefer higher GPAs
+      // If user wants harder courses (high difficultyScore), prefer lower GPAs
+      return analysis.difficultyScore < 0.5
+        ? b.gpa - a.gpa // Sort by descending GPA for easier preference
+        : a.gpa - b.gpa; // Sort by ascending GPA for harder preference
     }
-  }
+    return 0;
+  });
 
   return {
     csCourses,
-    genEdCourses,
   };
+}
+
+function calculatePreferenceScore(course: SearchResult, difficultyPreference: number, searchRank: number, totalResults: number): number {
+  const weights = {
+    similarity: 0.6, // Weight for search ranking
+    difficulty: 0.4, // Weight for difficulty match
+  };
+
+  // Normalize search ranking (0-1, where 1 is best match)
+  const similarityScore = 1 - searchRank / totalResults;
+
+  // Calculate difficulty match (0-1, where 1 is perfect match)
+  const difficultyScore = course.gpa ? 1 - Math.abs(1 - course.gpa / 4.0 - difficultyPreference) : 0.5; // Default if GPA unknown
+
+  return similarityScore * weights.similarity + difficultyScore * weights.difficulty;
 }

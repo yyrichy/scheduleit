@@ -231,7 +231,7 @@ function CourseCard({ result }: { result: SearchResult }) {
           <span
             className={`text-sm px-2 py-1 rounded ${
               result.gpa != null && !isNaN(result.gpa)
-                ? result.gpa >= 3.5
+                ? result.gpa >= 3.2
                   ? "bg-green-100 text-green-800"
                   : result.gpa >= 3.0
                   ? "bg-yellow-100 text-yellow-800"
