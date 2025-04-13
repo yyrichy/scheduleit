@@ -60,55 +60,61 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
         const startTimeInMinutes = startTime.hour * 60 + startTime.minutes;
         const endTimeInMinutes = endTime.hour * 60 + endTime.minutes;
 
-        // Check if current hour block overlaps with class time
         return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
       });
     });
   };
 
-  // Add this after the time slots grid
   return (
     <div className="space-y-4">
       <div className="border rounded-lg overflow-hidden">
         <div className="grid grid-cols-6 text-sm">
           {/* Header */}
-          <div className="border-b bg-muted/50 p-2 text-center font-semibold">
-            Time
-          </div>
+          <div className="border-b bg-muted/50 p-2 text-center font-semibold">Time</div>
           {days.map((day) => (
-            <div
-              key={day}
-              className="border-b bg-muted/50 p-2 text-center font-semibold"
-            >
+            <div key={day} className="border-b bg-muted/50 p-2 text-center font-semibold">
               {day}
             </div>
           ))}
-  
+
           {/* Time slots */}
           {hours.map((hour) => (
             <React.Fragment key={hour}>
               <div className="border-b border-r p-2 text-sm text-muted-foreground">
-                {hour === 12 ? '12:00 PM' : hour > 12 ? `${hour-12}:00 PM` : `${hour}:00 AM`}
+                {hour === 12 ? "12:00 PM" : hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 AM`}
               </div>
-  
+
               {days.map((day) => {
                 const courses = getCoursesForTimeAndDay(hour, day);
                 return (
-                  <div
-                    key={`${day}-${hour}`}
-                    className="border-b border-r p-2 relative min-h-[3rem]"
-                  >
-                    {courses.map((course) => (
-                      <div
-                        key={course.section_id}
-                        className={`absolute inset-1 rounded-md p-1 text-xs ${getBlockColor(course.course)}`}
-                      >
-                        <div className="font-medium">{course.course}</div>
-                        <div className="text-muted-foreground text-[10px]">
-                          {course.meetings[0].start_time} - {course.meetings[0].end_time}
+                  <div key={`${day}-${hour}`} className="border-b border-r p-2 relative min-h-[4rem]">
+                    {courses.map((course) => {
+                      const timing = course.meetings[0];
+                      const startTime = parseTime(timing.start_time);
+                      const endTime = parseTime(timing.end_time);
+                      const durationInHours = (endTime.hour * 60 + endTime.minutes - (startTime.hour * 60 + startTime.minutes)) / 60;
+                      const offsetPercent = (startTime.minutes / 60) * 100;
+
+                      return (
+                        <div
+                          key={course.section_id}
+                          className={cn("absolute rounded-md p-1 text-xs", getBlockColor(course.course))}
+                          style={{
+                            top: `${offsetPercent}%`,
+                            left: "4px",
+                            right: "4px",
+                            height: `${durationInHours * 100}%`,
+                            minHeight: "2rem",
+                            zIndex: 10,
+                          }}
+                        >
+                          <div className="font-medium">{course.course}</div>
+                          <div className="text-muted-foreground text-[10px]">
+                            {timing.start_time} - {timing.end_time}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -116,23 +122,18 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
           ))}
         </div>
       </div>
-  
+
       {/* Online/Asynchronous Courses Section */}
-      {sections.some(section => !section.meetings.length || section.meetings.every(m => !m.days)) && (
+      {sections.some((section) => !section.meetings.length || section.meetings.every((m) => !m.days)) && (
         <div className="border rounded-lg p-4">
           <h3 className="font-semibold mb-2">Online/Asynchronous Courses</h3>
           <div className="space-y-2">
             {sections
-              .filter(section => !section.meetings.length || section.meetings.every(m => !m.days))
-              .map(course => (
-                <div 
-                  key={course.section_id}
-                  className={`${getBlockColor(course.course)} rounded-md p-2`}
-                >
+              .filter((section) => !section.meetings.length || section.meetings.every((m) => !m.days))
+              .map((course) => (
+                <div key={course.section_id} className={`${getBlockColor(course.course)} rounded-md p-2`}>
                   <div className="font-medium">{course.course}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Online/Asynchronous
-                  </div>
+                  <div className="text-xs text-muted-foreground">Online/Asynchronous</div>
                 </div>
               ))}
           </div>
