@@ -90,8 +90,13 @@ export default function CourseSearch() {
     try {
       const allCourses = [
         ...results.csCourses,
-        ...Object.values(results.genEdCourses).flat()
+        ...Object.values(results.genEdCourses).flat().map(course => ({
+          ...course,
+          gen_ed: Array.isArray(course.gen_ed) ? course.gen_ed : [course.gen_ed],
+          credits: typeof course.credits === 'string' ? parseInt(course.credits) : course.credits
+        }))
       ];
+
       const availableCourses = showOnlyAvailable 
         ? allCourses.filter(course => course.prerequisites_met)
         : allCourses;
@@ -128,8 +133,9 @@ export default function CourseSearch() {
           }
         }
 
+        // Continue generating combinations if we haven't found enough schedules
         if (schedules.length < 5) {
-          for (let i = startIndex; i < courses.length; i++) {
+          for (let i = startIndex; i < courses.length && schedules.length < 5; i++) {
             const course = courses[i];
             const newCredits = currentCredits + (Number(course.credits) || 0);
             if (newCredits <= targetCredits + 3) {
@@ -144,9 +150,10 @@ export default function CourseSearch() {
         .sort((a, b) => b.totalScore - a.totalScore)
         .slice(0, 5);
 
-      // Navigate to schedules page with the generated schedules
-      const schedulesParam = encodeURIComponent(JSON.stringify(sortedSchedules));
-      router.push(`/schedules?schedules=${schedulesParam}`);
+      // Store schedules in localStorage instead of URL
+      localStorage.setItem('generatedSchedules', JSON.stringify(sortedSchedules));
+      router.push('/schedules');
+      
     } catch (error) {
       setError("Failed to generate schedules: " + (error as Error).message);
     } finally {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { WeeklySchedule } from '../components/WeeklySchedule';
 import { Schedule } from '../types/schedule';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,18 +15,29 @@ import {
 } from "@/components/ui/carousel";
 
 export default function SchedulesPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const schedulesParam = searchParams.get('schedules');
-  
-  let schedules: Schedule[] = [];
-  
-  try {
-    if (schedulesParam) {
-      schedules = JSON.parse(decodeURIComponent(schedulesParam));
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+
+  useEffect(() => {
+    try {
+      // First try to get schedules from URL parameters
+      const schedulesParam = searchParams.get('schedules');
+      if (schedulesParam) {
+        const parsedSchedules = JSON.parse(decodeURIComponent(schedulesParam));
+        setSchedules(parsedSchedules);
+        return;
+      }
+
+      // If no URL parameters, try localStorage
+      const storedSchedules = localStorage.getItem('generatedSchedules');
+      if (storedSchedules) {
+        setSchedules(JSON.parse(storedSchedules));
+      }
+    } catch (error) {
+      console.error('Error loading schedules:', error);
     }
-  } catch (error) {
-    console.error('Error parsing schedules:', error);
-  }
+  }, [searchParams]);
 
   if (!schedules.length) {
     return (
@@ -46,7 +58,16 @@ export default function SchedulesPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Generated Schedules</h1>
+      <div className="flex items-center mb-8">
+        <button
+          onClick={() => router.back()}
+          className="absolute px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white rounded-lg border shadow-sm hover:shadow-md transition-all"
+        >
+          ← Back to Search
+        </button>
+        <h1 className="text-3xl font-bold w-full text-center">Your Schedule Matches</h1>
+      </div>
+      
       <div className="relative">
         <Carousel className="w-full max-w-4xl mx-auto">
           <CarouselContent>
@@ -67,31 +88,45 @@ export default function SchedulesPage() {
                       {schedule.courses.map((course, courseIndex) => {
                         const section = schedule.sections[courseIndex];
                         return (
-                          <div key={course.course_id} className="border-t pt-4">
-                            <h3 className="font-medium text-lg flex items-center justify-between">
-                              {course.course_id}
+                          <details key={course.course_id} className="border-t pt-4">
+                            <summary className="font-medium text-lg flex items-center justify-between cursor-pointer hover:opacity-80">
+                              <span className={`
+                                ${course.course_id.startsWith('CMSC') ? 'text-blue-600' : ''}
+                                ${course.gen_ed?.includes('DSHS') ? 'text-purple-600' : ''}
+                                ${course.gen_ed?.includes('DSHU') ? 'text-pink-600' : ''}
+                                ${course.gen_ed?.includes('DSNS') ? 'text-green-600' : ''}
+                                ${course.gen_ed?.includes('DSNL') ? 'text-emerald-600' : ''}
+                                ${course.gen_ed?.includes('DSSP') ? 'text-orange-600' : ''}
+                                ${course.gen_ed?.includes('DVCC') ? 'text-red-600' : ''}
+                                ${course.gen_ed?.includes('DVUP') ? 'text-yellow-600' : ''}
+                                ${course.gen_ed?.includes('SCIS') ? 'text-cyan-600' : ''}
+                              `}>
+                                {course.course_id}
+                              </span>
                               <Badge variant="outline">Section {section.section_id}</Badge>
-                            </h3>
-                            <p className="text-muted-foreground mt-1">{course.content}</p>
-                            <div className="mt-2 text-sm">
-                              <p className="font-medium">
-                                Instructors: {section.instructors.join(', ') || 'TBA'}
-                              </p>
-                              <div className="mt-1">
-                                <p className="font-medium">Meetings:</p>
-                                {section.meetings.map((meeting, idx) => (
-                                  <p key={idx} className="ml-4">
-                                    <span className="font-medium">{meeting.days}:</span>{' '}
-                                    {meeting.start_time} - {meeting.end_time}
-                                    <span className="text-muted-foreground ml-2">
-                                      ({meeting.building} {meeting.room})
-                                      {meeting.classtype && ` - ${meeting.classtype}`}
-                                    </span>
-                                  </p>
-                                ))}
+                            </summary>
+                            <div className="mt-4">
+                              <p className="text-muted-foreground">{course.content}</p>
+                              <div className="mt-2 text-sm">
+                                <p className="font-medium">
+                                  Instructors: {section.instructors.join(', ') || 'TBA'}
+                                </p>
+                                <div className="mt-1">
+                                  <p className="font-medium">Meetings:</p>
+                                  {section.meetings.map((meeting, idx) => (
+                                    <p key={idx} className="ml-4">
+                                      <span className="font-medium">{meeting.days}:</span>{' '}
+                                      {meeting.start_time} - {meeting.end_time}
+                                      <span className="text-muted-foreground ml-2">
+                                        ({meeting.building} {meeting.room})
+                                        {meeting.classtype && ` - ${meeting.classtype}`}
+                                      </span>
+                                    </p>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          </details>
                         );
                       })}
                     </div>
