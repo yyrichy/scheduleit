@@ -12,6 +12,7 @@ export const prerequisiteMap: PrereqMap = {
   CMSC132: (completedCourses) => completedCourses.includes("CMSC131") && completedCourses.includes("MATH141"),
   CMSC216: (completedCourses) => completedCourses.includes("CMSC132"),
   CMSC250: (completedCourses) => completedCourses.includes("CMSC131") && completedCourses.includes("MATH141"),
+  CMSC320: (completedCourses) => completedCourses.includes("CMSC216") && completedCourses.includes("CMSC250"),
   CMSC330: (completedCourses) => completedCourses.includes("CMSC216") && completedCourses.includes("CMSC250"),
   CMSC351: (completedCourses) => completedCourses.includes("CMSC250") && completedCourses.includes("MATH141"),
   CMSC411: (completedCourses) => completedCourses.includes("CMSC330") && completedCourses.includes("CMSC351"),
@@ -20,7 +21,11 @@ export const prerequisiteMap: PrereqMap = {
   CMSC417: (completedCourses) => completedCourses.includes("CMSC351"),
   CMSC420: (completedCourses) => completedCourses.includes("CMSC330") && completedCourses.includes("CMSC351"),
   CMSC421: (completedCourses) => completedCourses.includes("CMSC330") && completedCourses.includes("CMSC351"),
-  CMSC422: (completedCourses) => completedCourses.includes("CMSC330") && completedCourses.includes("CMSC351"),
+  CMSC422: (completedCourses) => 
+    completedCourses.includes("CMSC320") &&
+    completedCourses.includes("CMSC330") &&
+    completedCourses.includes("CMSC351") &&
+    ["MATH240", "MATH341", "MATH461"].some(course => completedCourses.includes(course)),
   CMSC423: (completedCourses) => completedCourses.includes("CMSC351"),
   CMSC424: (completedCourses) => completedCourses.includes("CMSC351"),
   CMSC425: (completedCourses) => completedCourses.includes("CMSC330") && completedCourses.includes("CMSC351"),
@@ -89,6 +94,7 @@ export const prerequisiteMapString: Record<string, string> = {
   CMSC132: "Must complete CMSC131 and MATH141 with a minimum grade of C-",
   CMSC216: "Must complete CMSC132 with a minimum grade of C-",
   CMSC250: "Must complete CMSC131 and MATH141 with a minimum grade of C-",
+  CMSC320: "Must complete CMSC216 and CMSC250 with a minimum grade of C-",
   CMSC330: "Must complete CMSC216 and CMSC250 with a minimum grade of C-",
   CMSC351: "Must complete CMSC250 and MATH141 with a minimum grade of C-",
   CMSC411: "Must complete CMSC330 and CMSC351 with a minimum grade of C-",
@@ -97,7 +103,7 @@ export const prerequisiteMapString: Record<string, string> = {
   CMSC417: "Must complete CMSC351 with a minimum grade of C-",
   CMSC420: "Must complete CMSC330 and CMSC351 with a minimum grade of C-",
   CMSC421: "Must complete CMSC330 and CMSC351 with a minimum grade of C-",
-  CMSC422: "Must complete CMSC330 and CMSC351 with a minimum grade of C-",
+  CMSC422: "Minimum grade of C- in CMSC320, CMSC330, and CMSC351; and 1 course with a minimum grade of C- from (MATH240, MATH341, MATH461); and permission of CMNS-Computer Science department",
   CMSC423: "Must complete CMSC351 with a minimum grade of C-",
   CMSC424: "Must complete CMSC351 with a minimum grade of C-",
   CMSC425: "Must complete CMSC330 and CMSC351 with a minimum grade of C-",

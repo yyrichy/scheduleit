@@ -1,4 +1,8 @@
-# TestudoMatch
+# Testudo Match - Bitcamp 2025 Hackathon
+
+https://devpost.com/software/testudo-match/
+
+Generates suggested schedules for students based on a single text input.
 
 ### Find your perfect class schedule match at UMD. Swipe right on courses not people
 

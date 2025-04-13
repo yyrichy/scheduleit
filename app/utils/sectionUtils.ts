@@ -1,17 +1,18 @@
 import { Section, Professor, ScoredSection } from "../types/section";
 import { SearchResult } from "./courseQuery";
+import fs from "fs/promises";
+import path from "path";
 
 // Add professor rating cache at the top with sections cache
 let sectionsCache: Record<string, Section[]> | null = null;
 let professorRatingCache: Record<string, number> = {};
 
+const SECTIONS_STORE_PATH = path.join(process.cwd(), "data", "sections_store.json");
+
 async function loadSectionsStore() {
   if (!sectionsCache) {
-    const response = await fetch("/api/sections");
-    if (!response.ok) {
-      throw new Error("Failed to load sections data");
-    }
-    sectionsCache = await response.json();
+    const data = await fs.readFile(SECTIONS_STORE_PATH, "utf-8");
+    sectionsCache = JSON.parse(data);
   }
   return sectionsCache;
 }

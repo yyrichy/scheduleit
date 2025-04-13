@@ -14,7 +14,8 @@ async function analyzeQuery(query: string): Promise<PreferenceAnalysis> {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `Analyze this course search query from a CS major: "${query}"
-Consider CS major requirements at University of Maryland, College Park.
+Consider CS major requirements at University of Maryland, College Park. If they want
+to take a course that is targeted for only 4xx, for example ai, then their level is 4xx.
 Return a JSON object with:
 {
   "difficultyScore": number 0-1 (0=easiest),

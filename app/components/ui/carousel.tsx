@@ -208,7 +208,7 @@ function CarouselNext({
   size = "icon",
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { orientation } = useCarousel()
+  const { orientation, api } = useCarousel();
   const router = useRouter()
 
   return (
@@ -224,7 +224,7 @@ function CarouselNext({
         className
       )}
       onClick={() => {
-        const currentIndex = document.querySelectorAll('[data-slot="carousel-item"]').length - 1;
+        const currentIndex = api?.selectedScrollSnap() || 0;
         router.push(`/schedules/edit/${currentIndex}`);
       }}
       {...props}

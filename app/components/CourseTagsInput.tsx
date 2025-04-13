@@ -12,7 +12,7 @@ interface CourseTagsInputProps {
 
 // Get all courses from prerequisite map
 const ALL_COURSES = [
-  "CMSC131", "CMSC132", "CMSC216", "CMSC250", "CMSC330", "CMSC351", 
+  "CMSC131", "CMSC132", "CMSC216", "CMSC250", "CMSC320", "CMSC330", "CMSC351", 
   "CMSC411", "CMSC412", "CMSC414", "CMSC417", "CMSC420", "CMSC421", 
   "CMSC422", "CMSC423", "CMSC424", "CMSC425", "CMSC426", "CMSC430", 
   "CMSC433", "CMSC434", "CMSC435", "CMSC436", "CMSC451", "CMSC454", 

@@ -78,11 +78,26 @@ export default function CourseSearch() {
     setResults((prev) => ({ ...prev, genEdCourses: genEdResults }));
   };
 
+  const getHighestCourseLevel = (completedCourses: string[]): number => {
+    return completedCourses.reduce((maxLevel, course) => {
+      const level = parseInt(course.match(/\d+/)?.[0]?.charAt(0) || "0");
+      return level > maxLevel ? level : maxLevel;
+    }, 0);
+  };
+
+  const filterByCourseLevel = (courses: SearchResult[], highestLevel: number) => {
+    return courses.filter((course) => {
+      const courseLevel = parseInt(course.course_id.match(/\d+/)?.[0]?.charAt(0) || "0");
+      return courseLevel >= highestLevel;
+    });
+  };
+
   const searchCourses = async () => {
     if (!query.trim()) return;
     setLoading(true);
     setError("");
     try {
+      const highestLevel = getHighestCourseLevel(completedCourses);
       const response = await fetch("/api/cs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,11 +105,15 @@ export default function CourseSearch() {
       });
       if (!response.ok) throw new Error("Search failed");
       const data = await response.json();
-      setResults((prev) => ({ ...prev, csCourses: data.csCourses }));
+
+      // Filter courses based on highest level
+      const filteredCourses = filterByCourseLevel(data.csCourses, highestLevel);
+
+      setResults((prev) => ({ ...prev, csCourses: filteredCourses }));
       await searchGenEdCourses();
 
       // Show sections if results are found
-      if (data.csCourses.length > 0) setShowCsCourses(true);
+      if (filteredCourses.length > 0) setShowCsCourses(true);
       if (Object.values(results.genEdCourses).some((courses) => courses.length > 0)) setShowGenEdCourses(true);
     } catch (err) {
       setError(`Search failed: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -124,70 +143,25 @@ export default function CourseSearch() {
 
       const availableCourses = showOnlyAvailable ? allCourses.filter((course) => course.prerequisites_met) : allCourses;
 
-      const courseSectionsMap = new Map();
-      await Promise.all(
-        availableCourses.map(async (course) => {
-          const sections = await getScoredSections(course);
-          courseSectionsMap.set(course.course_id, sections);
-        })
-      );
+      // Separate CS courses from other courses
+      const csCourses = availableCourses.filter((course) => course.course_id.startsWith("CMSC"));
+      const otherCourses = availableCourses.filter((course) => !course.course_id.startsWith("CMSC"));
 
-      const schedules: Schedule[] = [];
+      // Use the new API endpoint
+      const response = await fetch("/api/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          csCourses,
+          otherCourses,
+          targetCredits,
+          completedCourses,
+        }),
+      });
 
-      const generateCombinations = async (
-        courses: SearchResult[],
-        currentSchedule: SearchResult[],
-        currentCredits: number,
-        startIndex: number,
-        usedGenEds: Set<string> = new Set()
-      ) => {
-        if (currentCredits >= targetCredits - 2 && currentCredits <= targetCredits + 2) {
-          const sections = currentSchedule.map((course) => courseSectionsMap.get(course.course_id)[0]).filter(Boolean);
+      if (!response.ok) throw new Error("Schedule generation failed");
 
-          if (sections.length === currentSchedule.length && !checkScheduleConflicts(sections)) {
-            // Calculate diversity score based on unique gen eds
-            const uniqueGenEds = new Set(currentSchedule.flatMap((course) => course.gen_ed || []));
-            const diversityScore = uniqueGenEds.size / (currentSchedule.length || 1);
-
-            const totalScore =
-              (sections.reduce((sum, section) => sum + section.sectionScore, 0) / sections.length) * 0.8 + diversityScore * 0.2;
-
-            schedules.push({
-              courses: currentSchedule,
-              sections,
-              totalScore,
-              totalCredits: currentCredits,
-            });
-          }
-        }
-
-        for (let i = startIndex; i < courses.length; i++) {
-          const course = courses[i];
-          const newCredits = currentCredits + (Number(course.credits) || 0);
-
-          // Skip if this course's gen eds are already used in this schedule
-          if (course.gen_ed && course.gen_ed.some((ge) => usedGenEds.has(ge))) continue;
-
-          if (newCredits <= targetCredits + 2) {
-            const newUsedGenEds = new Set(usedGenEds);
-            if (course.gen_ed) {
-              course.gen_ed.forEach((ge) => newUsedGenEds.add(ge));
-            }
-            await generateCombinations(courses, [...currentSchedule, course], newCredits, i + 1, newUsedGenEds);
-          }
-        }
-
-        // Periodically sort and limit schedules
-        if (schedules.length > 10) {
-          schedules.sort((a, b) => b.totalScore - a.totalScore);
-          schedules.length = 5;
-        }
-      };
-
-      await generateCombinations(availableCourses, [], 0, 0);
-
-      const sortedSchedules = schedules.sort((a, b) => b.totalScore - a.totalScore).slice(0, 5);
-
+      const sortedSchedules = await response.json();
       localStorage.setItem("generatedSchedules", JSON.stringify(sortedSchedules));
       router.push("/schedules");
     } catch (error) {

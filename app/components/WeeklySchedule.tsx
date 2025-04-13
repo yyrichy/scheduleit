@@ -1,6 +1,6 @@
 import React from 'react';
 import { Section } from '../types/section';
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 interface WeeklyScheduleProps {
   sections: Section[];
