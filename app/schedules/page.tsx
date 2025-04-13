@@ -13,6 +13,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import Link from 'next/link';
 
 export default function SchedulesPage() {
   const router = useRouter();
@@ -77,9 +78,17 @@ export default function SchedulesPage() {
                   <CardHeader className="bg-muted/50">
                     <CardTitle className="flex items-center justify-between">
                       <span>Schedule {index + 1} - {schedule.totalCredits} credits</span>
-                      <Badge variant="secondary" className="text-sm">
-                        Match: {(schedule.totalScore * 100).toFixed(1)}%
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-sm">
+                          Match: {(schedule.totalScore * 100).toFixed(1)}%
+                        </Badge>
+                        <Link
+                          href={`/schedules/edit/${index}`}
+                          className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                        >
+                          Edit Schedule
+                        </Link>
+                      </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">

@@ -69,54 +69,78 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
     });
   };
 
-
+  // Add this after the time slots grid
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <div className="grid grid-cols-6 text-sm">
-        {/* Header */}
-        <div className="border-b bg-muted/50 p-2 text-center font-semibold">
-          Time
-        </div>
-        {days.map((day) => (
-          <div
-            key={day}
-            className="border-b bg-muted/50 p-2 text-center font-semibold"
-          >
-            {day}
+    <div className="space-y-4">
+      <div className="border rounded-lg overflow-hidden">
+        <div className="grid grid-cols-6 text-sm">
+          {/* Header */}
+          <div className="border-b bg-muted/50 p-2 text-center font-semibold">
+            Time
           </div>
-        ))}
-
-        {/* Time slots */}
-        {hours.map((hour) => (
-          <React.Fragment key={hour}>
-            <div className="border-b border-r p-2 text-sm text-muted-foreground">
-              {hour === 12 ? '12:00 PM' : hour > 12 ? `${hour-12}:00 PM` : `${hour}:00 AM`}
+          {days.map((day) => (
+            <div
+              key={day}
+              className="border-b bg-muted/50 p-2 text-center font-semibold"
+            >
+              {day}
             </div>
-
-            {days.map((day) => {
-              const courses = getCoursesForTimeAndDay(hour, day);
-              return (
-                <div
-                  key={`${day}-${hour}`}
-                  className="border-b border-r p-2 relative min-h-[3rem]"
-                >
-                  {courses.map((course) => (
-                    <div
-                      key={course.section_id}
-                      className={`absolute inset-1 rounded-md p-1 text-xs ${getBlockColor(course.course)}`}
-                    >
-                      <div className="font-medium">{course.course}</div>
-                      <div className="text-muted-foreground text-[10px]">
-                        {course.meetings[0].start_time} - {course.meetings[0].end_time}
+          ))}
+  
+          {/* Time slots */}
+          {hours.map((hour) => (
+            <React.Fragment key={hour}>
+              <div className="border-b border-r p-2 text-sm text-muted-foreground">
+                {hour === 12 ? '12:00 PM' : hour > 12 ? `${hour-12}:00 PM` : `${hour}:00 AM`}
+              </div>
+  
+              {days.map((day) => {
+                const courses = getCoursesForTimeAndDay(hour, day);
+                return (
+                  <div
+                    key={`${day}-${hour}`}
+                    className="border-b border-r p-2 relative min-h-[3rem]"
+                  >
+                    {courses.map((course) => (
+                      <div
+                        key={course.section_id}
+                        className={`absolute inset-1 rounded-md p-1 text-xs ${getBlockColor(course.course)}`}
+                      >
+                        <div className="font-medium">{course.course}</div>
+                        <div className="text-muted-foreground text-[10px]">
+                          {course.meetings[0].start_time} - {course.meetings[0].end_time}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </React.Fragment>
-        ))}
+                    ))}
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
+  
+      {/* Online/Asynchronous Courses Section */}
+      {sections.some(section => !section.meetings.length || section.meetings.every(m => !m.days)) && (
+        <div className="border rounded-lg p-4">
+          <h3 className="font-semibold mb-2">Online/Asynchronous Courses</h3>
+          <div className="space-y-2">
+            {sections
+              .filter(section => !section.meetings.length || section.meetings.every(m => !m.days))
+              .map(course => (
+                <div 
+                  key={course.section_id}
+                  className={`${getBlockColor(course.course)} rounded-md p-2`}
+                >
+                  <div className="font-medium">{course.course}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Online/Asynchronous
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
