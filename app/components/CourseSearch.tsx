@@ -64,7 +64,7 @@ export default function CourseSearch() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/courses", {
+      const response = await fetch("/api/cs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, completedCourses }),

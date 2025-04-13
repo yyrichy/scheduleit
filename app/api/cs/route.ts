@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { queryCourses, SearchResult } from "@/utils/courseQuery";
+import { queryCsCourses, SearchResult } from "@/utils/courseQuery";
 
 export async function POST(req: Request) {
   try {
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
     // Search for each topic separately
     for (const topic of topics) {
-      const results = await queryCourses(topic, completedCourses);
+      const results = await queryCsCourses(topic, completedCourses);
       allResults.push(...results.csCourses); // Extract csCourses from results
     }
 

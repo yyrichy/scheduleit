@@ -2,7 +2,7 @@ import { config } from "dotenv";
 config();
 
 import { trainModel } from "../app/utils/modelTrainer";
-import { queryCourses } from "../app/utils/courseQuery";
+import { queryCsCourses } from "../app/utils/courseQuery";
 
 async function testQueries() {
   console.log("🚀 Starting test queries...");
@@ -16,7 +16,7 @@ async function testQueries() {
   for (const query of testQueries) {
     console.log(`\n📝 Testing query: "${query}"`);
     try {
-      const results = await queryCourses(query);
+      const results = await queryCsCourses(query);
       console.log(`Found ${results.length} results:`);
       results.forEach((result) => {
         console.log(`\n🎓 ${result.course_id}`);
