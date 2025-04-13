@@ -3,6 +3,7 @@
 import React from "react";
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
+import { Heart } from "lucide-react"; // Add this import
 import RequirementsSelector from "./RequirementsSelector";
 import { GenEdRequirements, Schedule, SearchResults } from "../types/schedule";
 import { SearchResult } from "../utils/courseQuery";
@@ -171,20 +172,44 @@ export default function CourseSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && searchCourses()}
-          placeholder="Try: 'Show me easy programming classes' or 'I want challenging 400-level courses'"
-          className="w-full p-4 text-lg border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 mb-4"
+          placeholder="What kind of classes are you looking for? 😊"
+          className="w-full p-4 text-lg border border-red-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 bg-white/80 text-red-800 placeholder:text-red-300"
         />
         <button
           onClick={searchCourses}
           disabled={loading}
-          className="w-full px-6 py-4 bg-blue-500 text-white text-lg rounded-lg hover:bg-blue-600 disabled:bg-gray-400 shadow-sm"
+          className="w-full px-6 py-4 mt-4 bg-gradient-to-r from-red-600 to-red-800 text-white text-lg rounded-full hover:opacity-90 disabled:opacity-50 shadow-lg transition-all duration-200 font-semibold"
         >
-          {loading ? "Searching..." : "Search"}
+          {loading ? "Searching for your match..." : "Find My Match 💝"}
         </button>
         {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>
 
       <div className="space-y-4 mb-8">
+        <details className="bg-white rounded-xl shadow-sm border border-red-100">
+          <summary className="p-4 font-semibold cursor-pointer hover:bg-red-50 text-red-800 rounded-xl">
+            Your Course History 📚
+          </summary>
+          <div className="p-4 border-t border-red-100">
+            <p className="text-sm text-red-600 mb-4">
+              Tell us about your academic journey so far:
+            </p>
+            <CourseTagsInput value={completedCourses} onChange={setCompletedCourses} />
+            <div className="mt-4 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="showAvailable"
+                checked={showOnlyAvailable}
+                onChange={(e) => setShowOnlyAvailable(e.target.checked)}
+                className="h-4 w-4 rounded border-red-300 text-red-600 focus:ring-red-500"
+              />
+              <label htmlFor="showAvailable" className="text-sm text-red-700">
+                Show available matches only
+              </label>
+            </div>
+          </div>
+        </details>
+
         <details className="bg-white rounded-lg shadow-sm">
           <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">
             Completed Courses
@@ -250,8 +275,8 @@ export default function CourseSearch() {
         <h2 className="text-xl font-bold mb-4">Schedule Generator</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Target Credits: {targetCredits}
+            <label className="block text-sm font-medium text-red-700 mb-2">
+              Desired Credits: {targetCredits}
             </label>
             <input
               type="range"
@@ -259,15 +284,16 @@ export default function CourseSearch() {
               max="20"
               value={targetCredits}
               onChange={(e) => setTargetCredits(Number(e.target.value))}
-              className="w-full"
+              className="w-full accent-red-600"
             />
           </div>
           <button
             onClick={generateSchedules}
             disabled={isGenerating}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400"
+            className="w-full px-6 py-4 bg-gradient-to-r from-red-600 to-red-800 text-white text-lg rounded-full hover:opacity-90 disabled:opacity-50 shadow-lg transition-all duration-200 font-semibold flex items-center justify-center gap-2"
           >
-            {isGenerating ? "Generating..." : "Generate Schedules"}
+            <Heart className="w-5 h-5" />
+            {isGenerating ? "Finding your matches..." : "Generate My Matches"}
           </button>
         </div>
       </div>

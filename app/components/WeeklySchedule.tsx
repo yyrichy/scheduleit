@@ -19,25 +19,10 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
     }
 
     const colors = [
-      "bg-red-200",
-      "bg-pink-200",
-      "bg-purple-200",
-      "bg-indigo-200",
-      "bg-blue-200",
-      "bg-cyan-200",
-      "bg-teal-200",
-      "bg-emerald-200",
-      "bg-green-200",
-      "bg-lime-200",
-      "bg-yellow-200",
-      "bg-amber-200",
-      "bg-orange-200",
-      "bg-rose-200",
-      "bg-fuchsia-200",
-      "bg-violet-200",
-      "bg-sky-200",
-      "bg-slate-200",
-      "bg-zinc-200",
+      'bg-red-100', 'bg-pink-100', 'bg-rose-100', 
+      'bg-fuchsia-100', 'bg-purple-100', 'bg-violet-100',
+      'bg-red-50', 'bg-pink-50', 'bg-rose-50',
+      'bg-fuchsia-50', 'bg-purple-50', 'bg-violet-50'
     ];
 
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -67,15 +52,15 @@ export function WeeklySchedule({ sections }: WeeklyScheduleProps) {
 
   return (
     <div className="space-y-4">
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-red-200 rounded-lg overflow-hidden bg-white shadow-lg">
         <div className="grid grid-cols-6 text-sm">
           {/* Header remains the same */}
 
           {/* Time slots */}
           {hours.map((hour) => (
             <React.Fragment key={hour}>
-              <div className="border-b border-r p-2 text-sm text-muted-foreground">
-                {hour === 12 ? "12:00 PM" : hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 AM`}
+              <div className="border-b border-r p-2 text-sm text-red-600">
+                {hour === 12 ? '12:00 PM' : hour > 12 ? `${hour-12}:00 PM` : `${hour}:00 AM`}
               </div>
 
               {days.map((day) => {

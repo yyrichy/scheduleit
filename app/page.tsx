@@ -5,18 +5,18 @@ import CourseSearch from './components/CourseSearch';
 
 export default function Home() {
   return (
-    <main className="container mx-auto min-h-screen px-4 py-16 md:px-8">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <div className="space-y-2 text-center">
-          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-            UMD Course Search
+    <div className="min-h-screen bg-red-50">
+      <div className="container mx-auto py-16 px-4">
+        <div className="max-w-3xl mx-auto text-center space-y-8">
+          <h1 className="text-5xl font-bold text-red-800">
+            Testudo Match 🐢
           </h1>
-          <p className="text-muted-foreground mx-auto max-w-[700px] text-lg">
-            Find and explore University of Maryland courses easily.
+          <p className="text-xl text-red-600">
+            Find your perfect class schedule match at UMD
           </p>
+          <CourseSearch />
         </div>
-        <CourseSearch />
       </div>
-    </main>
+    </div>
   );
 }

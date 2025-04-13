@@ -14,6 +14,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Link from 'next/link';
+import { Heart, X } from "lucide-react";
 
 export default function SchedulesPage() {
   const router = useRouter();
@@ -134,8 +135,12 @@ export default function SchedulesPage() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="hidden md:flex" />
-          <CarouselNext className="hidden md:flex" />
+          <CarouselPrevious className="hidden md:flex h-12 w-12 bg-white border-red-200 text-red-600 hover:bg-red-100">
+            <X className="h-8 w-8" />
+          </CarouselPrevious>
+          <CarouselNext className="hidden md:flex h-12 w-12 bg-white border-green-200 text-green-600 hover:bg-green-100">
+            <Heart className="h-8 w-8" />
+          </CarouselNext>
         </Carousel>
         <div className="mt-4 text-center text-sm text-muted-foreground">
           Swipe or use arrow keys to view more schedules
