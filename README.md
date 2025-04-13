@@ -19,7 +19,7 @@
 We felt like finding the right courses to take as a UMD student was often confusing and frustrating. Reading through the major website, scrolling through the endless prerequisites and requirements. That's why we wanted a tool to help inspire and guide us students on finding the best, tailored schedule for them.
 
 ## What it does
-Testudo Match is a website where students can input their schedule wants using natural language (e.g. I want machine learning and database classes), find the most interesting "matches" 
+Testudo Match is a web application designed to help students at the University of Maryland efficiently plan their class schedules. By leveraging natural language processing, students can input their schedule preferences in plain language, such as "I want machine learning and database classes." The application then processes these inputs to find the most relevant and interesting course "matches" for the students.
 
 ## How we built it
 ### 🧠 Vector-Based Search
