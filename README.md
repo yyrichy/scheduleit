@@ -1,20 +1,19 @@
-# Testudo Match - Bitcamp 2025 Hackathon
+# TestudoMatch
 
-https://devpost.com/software/testudo-match/
+### Find your perfect class schedule match at UMD. Generates tailored schedules based on your single text input. Swipe right on courses not people
 
-Generates suggested schedules for students based on a single text input.
-
-### Find your perfect class schedule match at UMD. Swipe right on courses not people
+https://www.youtube.com/watch?v=6bT9nYnErYg
 
 ## Table of Contents
 - [Inspiration](#inspiration)
-- [What It Does](#what-it-does)
-- [How It Works](#how-it-works)
+- [What it does](#what-it-does)
+- [How we built it](#how-we-built-it)
+- [Challenges we ran into](#challenges-we-ran-into)
+- [Accomplishments that we're proud of](#accomplishments-that-were-proud-of)
+- [What we learned](#what-we-learned)
+- [What's next for Testudo Match](#whats-next-for-testudo-match)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
-- [Current Progress](#current-progress)
-- [Challenges](#challenges)
-- [What's Next](#whats-next)
 - [Run Locally](#run-locally)
 
 ---
@@ -23,31 +22,35 @@ Generates suggested schedules for students based on a single text input.
 We felt like finding the right courses to take as a UMD student was often confusing and frustrating. Reading through the major website, scrolling through the endless prerequisites and requirements. That's why we wanted a tool to help inspire and guide us students on finding the best, tailored schedule for them.
 
 ## What it does
-Testudo Match is a web application designed to help students at the University of Maryland efficiently plan their class schedules. By leveraging natural language processing, students can input their schedule preferences in plain language, such as "I want machine learning and database classes." The application then processes these inputs to find the most relevant and interesting course "matches" for the students.
+Testudo Match is a web application designed to help students at the University of Maryland efficiently plan their class schedules. By leveraging natural language processing, students can input their schedule preferences in plain language, such as "I want machine learning and database classes." The application then processes these inputs with semantic similarity search to generate schedules that students can "swipe" on.
 
 ## How we built it
 ### 🧠 Vector-Based Search
-1. Data Collection
+- Data Collection
    
    - Course data from UMD.io
    - Grade distributions and reviews from PlanetTerp
-2. Embedding Generation
+- Embedding Generation
    
    - HuggingFace’s sentence-transformers converts course descriptions into high-dimensional vectors
-3. Search with FAISS
+- Semantic Search with HuggingFace and LangChain
    
-   - Vectors are stored in a FAISS index for fast similarity search
-   - A natural language query is also embedded and compared against stored vectors to find semantically relevant courses
+   - Course data is serialized and stored, then created into vector embeddings using HuggingFace's transformer and LangChain's MemoryVectorStore for fast similarity search
+   - A natural language query is also embedded and compared against stored vectors to find semantically relevant courses. Embeddings contain semantic meaning of course data and query.
+
+- Gemini NLP
+  - Gemini used to determine user's major's course level based on text input
 
 ## Challenges we ran into
 - Creating an intuitive search from plain text queries
 - Designing the embedding and similarity system from scratch
 - Integrating multiple APIs with different formats
-- Building this while learning new frameworks
+- Cleaning incorrect and malformed API data, mapping complex prerequisites relationships
 
 ## Accomplishments that we're proud of
-- Successfully implemented a vector database system to store and search through course information.
+- Successfully implemented the user of vector stores and serializing course data.
 - Developed a search function that returns relevant courses based on user queries.
+- Generating and ranking best schedules with optimal section times.
 
 ## What we learned
 - How to effectively use embeddings for semantic search.
@@ -67,29 +70,31 @@ Testudo Match is a web application designed to help students at the University o
 
 ## Features
 
-- 🔍 Natural language course search
+- 🔍 Natural language course search for suggested courses
 - 📈 Integration with real-time UMD/PlanetTerp APIs
-- 🧠 Smart recommendations using embeddings
+- 🧠 Contextual course recommendations using vector store embeddings and similarity search
+- Understanding course difficulty and level requests using Gemini
+- Ranking courses based on professor ratings and average GPA
+- Creating optimal schedules without time conflicts
+- Editing schedules and adding/deleting courses
 - 📅 UI coming soon for:
   - Class planning
-  - Conflict detection
   - Friend schedule comparison
 
 ---
 
 ## Tech Stack
 
-- **Next.js** – frontend framework  
-- **FAISS** – fast similarity search  
-- **HuggingFace Transformers** – semantic embeddings  
+- **Next.js** – frontend & backend framework  
+- **Gemini** - interpreting student's desired course difficulty and course level
+- **LangChain MemoryVectorStore** –  perform similarity search and rank courses
+- **HuggingFace Sentence Transformers** – converting course description and user query into numerical vecteors
 - **UMD.io** & **PlanetTerp API** – real course and review data  
-- **Node.js** – backend logic  
-
 ---
 
 ## Run Locally
 
-Stores in vector stores for similarity search later.
+Scrape data from APIs and save data as Hugging Face embeddings in vector stores for searching later.
 > npm run train
 
 Run website locally
